@@ -5,6 +5,8 @@ export class uploadTocloudinary {
     const result = await cloudinary.uploader.upload(filePath, {
       folder: "books",
       resource_type: "raw",
+      access_mode: "public",
+      type: "upload",
     });
 
     return {

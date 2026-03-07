@@ -1,6 +1,11 @@
 import { eq, or, sql } from "drizzle-orm";
 import { db } from "../configs/dbconnection.ts";
-import { otpTable, usersTable } from "../models/schema.ts";
+import {
+  loginSecurityTable,
+  otpTable,
+  pointsTable,
+  usersTable,
+} from "../models/schema.ts";
 import argon2 from "argon2";
 import { hmacProcess, Otpcode } from "../utils/generateOtp.ts";
 import { queue as emailworker } from "../utils/Mail_worker.ts";
@@ -8,7 +13,8 @@ import jwt from "jsonwebtoken";
 import Tokens from "../utils/JWT_helper.ts";
 
 const FORGETPASSWORD_SEC = process.env.FORGETPASSWORD_SEC as string;
-
+const MAX_FAILED_ATTEMPTS = 10; // lock after 10 wrong tries
+const LOCK_DURATION = 15 * 60 * 1000; // 15 minutes
 export const registerUser = async (
   user_name: string,
   email: string,
@@ -43,6 +49,13 @@ export const registerUser = async (
     if (!newUser) {
       throw new Error("User not found");
     }
+    // Track points in pointsTable
+    await db.insert(pointsTable).values({
+      userId: newUser.id,
+      type: "earn",
+      amount: 25,
+      reference: "signup-bonus",
+    });
     // delete old OTPs if any
     await db.delete(otpTable).where(eq(otpTable.userId, newUser.id));
 
@@ -142,9 +155,58 @@ export const LoginService = async (email: string, password: string) => {
 
     if (!user) throw new Error("User not found");
 
+    //  Get or create login security row
+    let [security] = await db
+      .select()
+      .from(loginSecurityTable)
+      .where(eq(loginSecurityTable.userId, user.id));
+
+    if (!security) {
+      const now = new Date();
+
+      await db.insert(loginSecurityTable).values({
+        userId: user.id,
+        failedAttempts: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      security = {
+        userId: user.id,
+        failedAttempts: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+    }
+
+    // Check if account is locked
+    if (security.failedAttempts >= MAX_FAILED_ATTEMPTS) {
+      const lockExpires = new Date(
+        security.createdAt.getTime() + LOCK_DURATION
+      );
+      if (lockExpires > new Date()) {
+        throw new Error(
+          `Account locked due to too many failed attempts. Try again at ${lockExpires.toLocaleTimeString()}`
+        );
+      } else {
+        // Lock expired → reset counter
+        await db
+          .update(loginSecurityTable)
+          .set({
+            failedAttempts: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(loginSecurityTable.userId, user.id));
+
+        // Reset local variable
+        security.failedAttempts = 0;
+        security.createdAt = new Date();
+      }
+    }
+
     //  Check if email is verified
     if (!user.isVerified) {
-      // Email not verified
       const [otp] = await db
         .select()
         .from(otpTable)
@@ -153,7 +215,6 @@ export const LoginService = async (email: string, password: string) => {
         !otp || Date.now() > new Date(otp.createdAt).getTime() + 10 * 60 * 1000;
 
       if (isExpired) {
-        // Generate new OTP
         const code = Otpcode();
         const hashedCode = hmacProcess(
           code,
@@ -166,7 +227,6 @@ export const LoginService = async (email: string, password: string) => {
           code: hashedCode,
         });
 
-        // Send OTP email
         await emailworker.add(
           "send-email",
           {
@@ -192,15 +252,37 @@ export const LoginService = async (email: string, password: string) => {
       }
     }
 
-    // 3️⃣ Check password
+    //  Check password
     const validPassword = await argon2.verify(user.password, password);
 
     if (!validPassword) {
+      // Increment failed attempts
+      await db
+        .update(loginSecurityTable)
+        .set({
+          failedAttempts: security.failedAttempts + 1,
+          createdAt:
+            security.failedAttempts === 0 ? new Date() : security.createdAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(loginSecurityTable.userId, user.id));
+
       throw new Error("Invalid email or password");
     }
 
-    // 4️⃣ Generate tokens
+    //  Reset failedAttempts on successful login
+    if (security.failedAttempts > 0) {
+      await db
+        .update(loginSecurityTable)
+        .set({
+          failedAttempts: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(loginSecurityTable.userId, user.id));
+    }
 
+    //  Generate tokens
     const accessToken = Tokens.accessToken(user);
     const refreshToken = Tokens.refreshToken(user);
 

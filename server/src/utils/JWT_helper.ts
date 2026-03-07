@@ -8,7 +8,7 @@ class Tokens {
 
   static accessToken(currentUser: any) {
     return jwt.sign(
-      { id: currentUser.id, email: currentUser.email },
+      { id: currentUser.id, email: currentUser.email, role: currentUser.role },
       this.ACCESS_TOKEN_SECRET,
       { expiresIn: "15m" }
     );
@@ -16,7 +16,7 @@ class Tokens {
 
   static refreshToken(currentUser: any) {
     return jwt.sign(
-      { id: currentUser.id, email: currentUser.email },
+      { id: currentUser.id, email: currentUser.email, role: currentUser.role },
       this.REFRESH_TOKEN_SECRET,
       { expiresIn: "7d" }
     );

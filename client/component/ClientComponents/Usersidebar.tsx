@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CgMenuRight } from "react-icons/cg";
 import {
   FiHome,
@@ -16,10 +16,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSidebar } from "@/app/context/Sidebar";
 import { logout } from "@/fetchs/services";
+import { useRouter } from "next/navigation";
+import { useUser } from "@/app/context/UserContext";
 
 function Usersidebar() {
   const { isOpen, close } = useSidebar();
-  const role = "admin";
+  const router = useRouter();
+  const { user } = useUser();
+
+  if (!user) return null;
 
   const mainMenu = [
     {
@@ -33,7 +38,7 @@ function Usersidebar() {
       path: "/dashboard/discovery",
     },
     {
-      name: "Favourite",
+      name: "History",
       icon: FiHeart,
       path: "/dashboard/favourite",
     },
@@ -44,7 +49,7 @@ function Usersidebar() {
     },
   ];
 
-  if (role === "admin") {
+  if (user.role === "admin") {
     mainMenu.push({
       name: "admin",
       icon: Shield,
@@ -61,7 +66,7 @@ function Usersidebar() {
     {
       name: "Logout",
       icon: FiLogOut,
-      action: () => logout,
+      action: () => logout(router),
     },
   ];
 

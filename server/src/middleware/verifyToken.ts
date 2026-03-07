@@ -13,6 +13,7 @@ export interface AuthRequest extends Request {
   user?: {
     id: string;
     email: string;
+    role: string;
   };
 }
 
@@ -119,7 +120,14 @@ export const authMiddleware = async (
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       //  Attach user and continue
-      req.user = { id: currentUser.id, email: currentUser.email };
+      if (!currentUser.role) {
+        throw new Error("User role not defined");
+      }
+      req.user = {
+        id: currentUser.id,
+        email: currentUser.email,
+        role: currentUser.role,
+      };
       return next();
     } catch {
       //  Refresh token expired or invalid → logout

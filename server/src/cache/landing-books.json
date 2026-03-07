@@ -11,14 +11,6 @@
   ],
   "latestBooks": [
     {
-      "id": "abd7e982-5877-41cf-a7d5-4217b4204111",
-      "title": "wave",
-      "author": "wave2",
-      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768138319/cover/ahhqll57wx04wlzvaycr.png",
-      "isFeatured": false,
-      "category": "Horror"
-    },
-    {
       "id": "ee79f7f2-253d-442d-aa82-63aa54349947",
       "title": "wave",
       "author": "wave2",
@@ -27,13 +19,29 @@
       "category": "Horror"
     },
     {
-      "id": "f4a99a77-cfcb-4286-b530-962bcd6eafdc",
+      "id": "1cb056e0-4dfe-4d77-b34a-408859bbd302",
       "title": "wave",
       "author": "wave2",
-      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768140131/cover/vhdfyfprzvaiqbsuvz9v.png",
+      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768347484/cover/sv7wdlseu5uhqyljpcph.png",
+      "isFeatured": true,
+      "category": "Horror"
+    },
+    {
+      "id": "76ad0889-7863-4786-8211-a0b0a0fbb906",
+      "title": "wave",
+      "author": "wave2",
+      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768347554/cover/ehcjqn2y06yhieajunec.png",
+      "isFeatured": true,
+      "category": "Horror"
+    },
+    {
+      "id": "72aaec88-1602-4a1f-82bb-0559a4d4150c",
+      "title": "wave",
+      "author": "wave2",
+      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768347634/cover/pb1arfxxv0pvccftfwut.png",
       "isFeatured": true,
       "category": "Horror"
     }
   ],
-  "updatedAt": "2026-01-11T14:02:15.833Z"
+  "updatedAt": "2026-01-13T23:40:39.602Z"
 }

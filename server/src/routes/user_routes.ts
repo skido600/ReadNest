@@ -10,6 +10,7 @@ import {
   Logout,
 } from "../controllers/user_controller.ts";
 import validateRequest from "../middleware/validateRequest.ts";
+
 import {
   CreateUserSchema,
   Otp,
@@ -18,6 +19,7 @@ import {
   Verifycode,
   ResetPassword,
 } from "../utils/validation.ts";
+import { loginRateLimiter } from "../middleware/rateLimit.ts";
 
 const authroute: Router = express.Router();
 authroute.post("/signup", validateRequest(CreateUserSchema), Signup);

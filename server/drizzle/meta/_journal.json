@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1767362869725,
-      "tag": "0000_regular_runaways",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1767363241009,
-      "tag": "0001_modern_white_tiger",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1767478596793,
-      "tag": "0002_yummy_jack_flag",
+      "when": 1768530691977,
+      "tag": "0000_dashing_venom",
       "breakpoints": true
     }
   ]

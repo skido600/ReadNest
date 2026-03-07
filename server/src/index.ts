@@ -8,6 +8,8 @@ import adminrouter from "./routes/admin_routes.ts";
 
 import cors from "cors";
 import bookroute from "./routes/books_routes.ts";
+import profile from "./routes/profile_routes.ts";
+
 config();
 const port = process.env.PORT;
 
@@ -26,6 +28,7 @@ app.use(express.json());
 app.use("/api/authv1", authroute);
 app.use("/api/admin", adminrouter);
 app.use("/api/book", bookroute);
+app.use("/api/profile", profile);
 //error handling
 
 app.use(HandleError);
@@ -33,6 +36,7 @@ app.use(notFound);
 app.listen(port, async () => {
   console.log(`Server running on port ${port}`);
   initalizeEmailWorker();
+  // initializePdfWorker();
 });
 
 // import fs from "fs";

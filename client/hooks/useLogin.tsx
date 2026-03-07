@@ -46,7 +46,7 @@ export function useLogin() {
       });
 
       const result = await res.json();
-
+      console.log(result, "resulit from login");
       if (result.success) {
         const authenticated: any = result.data;
         setMessage("");
@@ -55,11 +55,12 @@ export function useLogin() {
         // setTimeout(() => {
         // router.push("/dashboard");
         // }, 3000);
-        localStorage.setItem("data", authenticated);
+        localStorage.setItem("data", JSON.stringify(authenticated));
         toast.success(result.message, { duration: 10000 });
         router.push("/dashboard");
       } else {
         toast.error(result.message);
+        setMessage(result.message);
       }
       if (
         result.message?.includes(

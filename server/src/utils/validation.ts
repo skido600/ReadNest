@@ -74,6 +74,9 @@ export const validateupdates = Joi.object({
   author: Joi.string().required().messages({
     "string.empty": "author is required",
   }),
+  description: Joi.string().required().messages({
+    "string.empty": "description is required",
+  }),
   isFeatured: Joi.boolean().required().messages({
     "any.required": "isFeatured is required",
     "boolean.base": "isFeatured must be true or false",

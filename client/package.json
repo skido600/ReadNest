@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.18",
     "@types/react-scroll": "^1.8.10",
     "framer-motion": "^12.23.24",
     "joi": "^18.0.1",

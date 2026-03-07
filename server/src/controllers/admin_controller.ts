@@ -1,6 +1,11 @@
 import { type Request, type Response, type NextFunction } from "express";
 
-import { booksTable } from "../models/schema.ts";
+import {
+  booksTable,
+  historyTable,
+  pointsTable,
+  usersTable,
+} from "../models/schema.ts";
 import { db } from "../configs/dbconnection.ts";
 import { validateupdates } from "../utils/validation.ts";
 import { HandleResponse } from "../utils/HandleResponse.ts";
@@ -9,6 +14,7 @@ import { PDFDocument } from "pdf-lib";
 import { uploadTocloudinary } from "../utils/uploadTocloudinary.ts";
 import { eq } from "drizzle-orm";
 import { generateLandingCache } from "../utils/generateLandingCache.ts";
+import * as bookService from "../services/admin_service.ts";
 
 export async function uploadBook(
   req: any,
@@ -18,12 +24,13 @@ export async function uploadBook(
   try {
     const bookFile = req.files?.book?.[0];
     const coverFile = req.files?.cover?.[0];
-    const { title, author, isFeatured, category } = req.body;
+    const { title, author, isFeatured, description, category } = req.body;
 
     const { error } = validateupdates.validate({
       title,
       author,
       isFeatured,
+      description,
       category,
     });
     if (error) {
@@ -34,7 +41,15 @@ export async function uploadBook(
         error.details[0]?.message as string
       );
     }
-
+    const wordCount = description.trim().split(/\s+/).length;
+    if (wordCount < 20) {
+      return HandleResponse(
+        res,
+        false,
+        400,
+        "Description must be at least 20 words"
+      );
+    }
     if (!bookFile || !coverFile) {
       return HandleResponse(res, false, 400, "Book and cover required");
     }
@@ -56,6 +71,7 @@ export async function uploadBook(
     await db.insert(booksTable).values({
       title,
       author,
+      description,
       isFeatured,
       userId: req.user.id,
       category,
@@ -65,7 +81,7 @@ export async function uploadBook(
       coverPublicId: coverUpload.publicId,
       pageCount,
     });
-    await generateLandingCache();
+    // await generateLandingCache();
     // 4 Delete local files
     fs.unlinkSync(bookFile.path);
     fs.unlinkSync(coverFile.path);
@@ -76,14 +92,29 @@ export async function uploadBook(
   }
 }
 
+//  UPDATE BOOK
 export async function updateBook(req: any, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const { title, author } = req.body;
+    const { title, author, isFeatured, category } = req.body;
 
-    const bookFile = req.files?.book?.[0];
-    const coverFile = req.files?.cover?.[0];
+    // Validate text fields
+    const { error } = validateupdates.validate({
+      title,
+      author,
+      isFeatured,
+      category,
+    });
+    if (error) {
+      return HandleResponse(
+        res,
+        false,
+        400,
+        error.details[0]?.message as string
+      );
+    }
 
+    // Check if book exists
     const [existingBook] = await db
       .select()
       .from(booksTable)
@@ -98,35 +129,17 @@ export async function updateBook(req: any, res: Response, next: NextFunction) {
 
     if (title) updateData.title = title;
     if (author) updateData.author = author;
+    if (category) updateData.category = category;
+    if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
 
-    // 📘 Replace book file
-    if (bookFile) {
-      const pdfBuffer = fs.readFileSync(bookFile.path);
-      const pdfDoc = await PDFDocument.load(pdfBuffer);
-      updateData.pageCount = pdfDoc.getPageCount();
-
-      // delete old pdf from cloudinary
-      await uploadTocloudinary.deleteFile(existingBook.filePublicId);
-
-      const newBook = await uploadTocloudinary.uploadBook(bookFile.path);
-      updateData.filePath = newBook.url;
-      updateData.filePublicId = newBook.publicId;
-
-      fs.unlinkSync(bookFile.path);
+    if (Object.keys(updateData).length === 0) {
+      return HandleResponse(res, false, 400, "Nothing to update");
     }
 
-    // 🖼 Replace cover image
-    if (coverFile) {
-      await uploadTocloudinary.deleteFile(existingBook.coverPublicId);
-
-      const newCover = await uploadTocloudinary.uploadCoverBook(coverFile.path);
-      updateData.coverphoto = newCover.url;
-      updateData.coverPublicId = newCover.publicId;
-
-      fs.unlinkSync(coverFile.path);
-    }
-
+    // Update only text fields in the database
     await db.update(booksTable).set(updateData).where(eq(booksTable.id, id));
+
+    await generateLandingCache();
 
     return HandleResponse(res, true, 200, "Book updated successfully");
   } catch (err) {
@@ -134,35 +147,129 @@ export async function updateBook(req: any, res: Response, next: NextFunction) {
   }
 }
 
-// export async function deleteBook(
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) {
-//   try {
-//     const { id } = req.params;
+//  DELETE BOOK
+export async function deleteBook(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return HandleResponse(res, false, 400, "Book id is required");
+    }
+    const [book] = await db
+      .select()
+      .from(booksTable)
+      .where(eq(booksTable.id, id))
+      .limit(1);
 
-//     // const book = await db.query.booksTable.findFirst({
-//     //   where: eq(booksTable.id, id),
-//     // });
-//     const [book] = await db
-//       .select()
-//       .from(booksTable)
-//       .where(eq(booksTable.id, id))
-//       .limit(1);
-//     if (!book) {
-//       return HandleResponse(res, false, 404, "Book not found");
-//     }
+    if (!book) {
+      return HandleResponse(res, false, 404, "Book not found");
+    }
 
-//     // delete from cloudinary
-//     await uploadTocloudinary.deleteFile(book.filePublicId);
-//     await uploadTocloudinary.deleteFile(book.coverPublicId);
+    await uploadTocloudinary.deleteFile(book.filePublicId);
+    await uploadTocloudinary.deleteFile(book.coverPublicId);
 
-//     // delete from db
-//     await db.delete(booksTable).where(eq(booksTable.id, id));
+    await db.delete(booksTable).where(eq(booksTable.id, id));
 
-//     return HandleResponse(res, true, 200, "Book deleted successfully");
-//   } catch (err) {
-//     next(err);
-//   }
-// }
+    await generateLandingCache();
+
+    return HandleResponse(res, true, 200, "Book deleted successfully");
+  } catch (err) {
+    next(err);
+  }
+}
+
+//updatefile
+export async function updateBookFile(
+  req: any,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { id } = req.params;
+    const bookFile = req.file;
+
+    if (!id) return HandleResponse(res, false, 400, "Book id is required");
+    if (!bookFile) return HandleResponse(res, false, 400, "PDF file required");
+
+    const [existingBook] = await db
+      .select()
+      .from(booksTable)
+      .where(eq(booksTable.id, id))
+      .limit(1);
+
+    if (!existingBook) return HandleResponse(res, false, 404, "Book not found");
+
+    const pdfBuffer = fs.readFileSync(bookFile.path);
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
+
+    // delete old PDF from cloudinary
+    await uploadTocloudinary.deleteFile(existingBook.filePublicId);
+
+    // upload new PDF
+    const newBook = await uploadTocloudinary.uploadBook(bookFile.path);
+
+    await db
+      .update(booksTable)
+      .set({
+        filePath: newBook.url,
+        filePublicId: newBook.publicId,
+        pageCount: pdfDoc.getPageCount(),
+      })
+      .where(eq(booksTable.id, id));
+
+    fs.unlinkSync(bookFile.path);
+    await generateLandingCache();
+
+    return HandleResponse(res, true, 200, "PDF updated successfully");
+  } catch (err) {
+    next(err);
+  }
+}
+
+//update cover
+export async function updateBookCover(
+  req: any,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const { id } = req.params;
+
+    const coverFile = req.file;
+    if (!id) return HandleResponse(res, false, 400, "Book id is required");
+    if (!coverFile)
+      return HandleResponse(res, false, 400, "Cover file required");
+
+    const [existingBook] = await db
+      .select()
+      .from(booksTable)
+      .where(eq(booksTable.id, id))
+      .limit(1);
+
+    if (!existingBook) return HandleResponse(res, false, 404, "Book not found");
+
+    // delete old cover from cloudinary
+    await uploadTocloudinary.deleteFile(existingBook.coverPublicId);
+
+    // upload new cover
+    const newCover = await uploadTocloudinary.uploadCoverBook(coverFile.path);
+
+    await db
+      .update(booksTable)
+      .set({
+        coverphoto: newCover.url,
+        coverPublicId: newCover.publicId,
+      })
+      .where(eq(booksTable.id, id));
+
+    fs.unlinkSync(coverFile.path);
+    await generateLandingCache();
+
+    return HandleResponse(res, true, 200, "Cover updated successfully");
+  } catch (err) {
+    next(err);
+  }
+}
