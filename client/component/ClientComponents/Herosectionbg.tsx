@@ -4,7 +4,7 @@ import Image from "next/image";
 import React from "react";
 import { motion } from "framer-motion";
 
-import HerosectionWaitlist from "./HerosectionWaitlist";
+// import HerosectionWaitlist from "./HerosectionWaitlist";
 
 function Herosectionbg() {
   const arrayofbook = [
@@ -87,7 +87,7 @@ function Herosectionbg() {
           Ready to Read? Enter your email to create or restart your membership.
         </p>
 
-        <HerosectionWaitlist />
+        {/* <HerosectionWaitlist /> */}
       </div>
 
       {/* bottom fade */}

@@ -49,7 +49,6 @@ export const otpTable = pgTable("otp", {
     .references(() => usersTable.id, { onDelete: "cascade" }),
   email: varchar({ length: 255 }).notNull(),
   code: text("code").notNull(),
-
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 // User sessions table

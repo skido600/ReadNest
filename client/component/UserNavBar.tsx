@@ -5,13 +5,14 @@ import { useSidebar } from "@/app/context/Sidebar";
 
 import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ClientComponents/ThemeToggle";
+import PointBalance from "./ClientComponents/PointBalance";
 function UserNavBar() {
   const { isOpen, toggle } = useSidebar();
   return (
     <main>
       <section className="flex items-center justify-between px-2 h-16   border-b border-neutral-200  dark:border-neutral-800  bg-[#ffffff] dark:bg-black ">
         {/* Left Menu */}
-        <ul className="flex items-center gap-6 text-gray-700 dark:text-gray-200">
+        {/* <ul className="flex items-center gap-6 text-gray-700 dark:text-gray-200">
           <li className="relative">
             <Search
               size={16}
@@ -32,8 +33,8 @@ function UserNavBar() {
   "
             />
           </li>
-        </ul>
-
+        </ul> */}
+        <PointBalance />
         {/* Right Controls */}
         <div>
           <ThemeToggle />

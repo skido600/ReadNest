@@ -18,7 +18,7 @@ const LOCK_DURATION = 15 * 60 * 1000; // 15 minutes
 export const registerUser = async (
   user_name: string,
   email: string,
-  password: string
+  password: string,
 ) => {
   try {
     const normalizedInput = email.toLowerCase().trim();
@@ -35,7 +35,7 @@ export const registerUser = async (
     const code = Otpcode();
     const hashedCode = hmacProcess(
       code,
-      process.env.HMAC_VERIFICATION_CODE_SECRET as string
+      process.env.HMAC_VERIFICATION_CODE_SECRET as string,
     );
 
     const [newUser] = await db
@@ -53,7 +53,7 @@ export const registerUser = async (
     await db.insert(pointsTable).values({
       userId: newUser.id,
       type: "earn",
-      amount: 25,
+      amount: 30000,
       reference: "signup-bonus",
     });
     // delete old OTPs if any
@@ -78,7 +78,7 @@ export const registerUser = async (
         backoff: { type: "exponential", delay: 3000 },
         removeOnComplete: true,
         removeOnFail: true,
-      }
+      },
     );
 
     return newUser;
@@ -89,7 +89,7 @@ export const registerUser = async (
 
 export const VerifyEmailService = async (
   email: string,
-  code: string
+  code: string,
 ): Promise<void> => {
   try {
     const normalizedInput = email.toLowerCase().trim();
@@ -99,8 +99,8 @@ export const VerifyEmailService = async (
       .where(
         or(
           eq(usersTable.email, normalizedInput),
-          eq(usersTable.user_name, normalizedInput)
-        )
+          eq(usersTable.user_name, normalizedInput),
+        ),
       );
 
     if (!user) throw new Error("User not found");
@@ -120,7 +120,7 @@ export const VerifyEmailService = async (
     // Hash the code from query to compare
     const hashedCode = hmacProcess(
       code as string,
-      process.env.HMAC_VERIFICATION_CODE_SECRET as string
+      process.env.HMAC_VERIFICATION_CODE_SECRET as string,
     );
 
     if (hashedCode !== otp.code) {
@@ -149,8 +149,8 @@ export const LoginService = async (email: string, password: string) => {
       .where(
         or(
           eq(usersTable.email, normalizedInput),
-          eq(usersTable.user_name, normalizedInput)
-        )
+          eq(usersTable.user_name, normalizedInput),
+        ),
       );
 
     if (!user) throw new Error("User not found");
@@ -182,11 +182,11 @@ export const LoginService = async (email: string, password: string) => {
     // Check if account is locked
     if (security.failedAttempts >= MAX_FAILED_ATTEMPTS) {
       const lockExpires = new Date(
-        security.createdAt.getTime() + LOCK_DURATION
+        security.createdAt.getTime() + LOCK_DURATION,
       );
       if (lockExpires > new Date()) {
         throw new Error(
-          `Account locked due to too many failed attempts. Try again at ${lockExpires.toLocaleTimeString()}`
+          `Account locked due to too many failed attempts. Try again at ${lockExpires.toLocaleTimeString()}`,
         );
       } else {
         // Lock expired → reset counter
@@ -218,7 +218,7 @@ export const LoginService = async (email: string, password: string) => {
         const code = Otpcode();
         const hashedCode = hmacProcess(
           code,
-          process.env.HMAC_VERIFICATION_CODE_SECRET as string
+          process.env.HMAC_VERIFICATION_CODE_SECRET as string,
         );
         await db.delete(otpTable).where(eq(otpTable.userId, user.id));
         await db.insert(otpTable).values({
@@ -239,15 +239,15 @@ export const LoginService = async (email: string, password: string) => {
             backoff: { type: "exponential", delay: 3000 },
             removeOnComplete: true,
             removeOnFail: true,
-          }
+          },
         );
 
         throw new Error(
-          "Your OTP expired. A new verification code has been sent to your email. Please check your inbox."
+          "Your OTP expired. A new verification code has been sent to your email. Please check your inbox.",
         );
       } else {
         throw new Error(
-          "check your email box and verify your email before logging in."
+          "check your email box and verify your email before logging in.",
         );
       }
     }
@@ -301,15 +301,15 @@ export async function forgotPasswordService(email: string) {
       .where(
         or(
           eq(usersTable.email, normalizedInput),
-          eq(usersTable.user_name, normalizedInput)
-        )
+          eq(usersTable.user_name, normalizedInput),
+        ),
       );
 
     if (!user) throw new Error("User not found");
     const code = Otpcode();
     const hashedCode = hmacProcess(
       code,
-      process.env.HMAC_VERIFICATION_CODE_SECRET as string
+      process.env.HMAC_VERIFICATION_CODE_SECRET as string,
     );
     await db.delete(otpTable).where(eq(otpTable.userId, user.id));
     // save new OTP
@@ -331,7 +331,7 @@ export async function forgotPasswordService(email: string) {
         backoff: { type: "exponential", delay: 3000 },
         removeOnComplete: true,
         removeOnFail: true,
-      }
+      },
     );
     return {
       email,
@@ -352,8 +352,8 @@ export async function verifyCodeService(email: string, code: string) {
       .where(
         or(
           eq(usersTable.email, normalizedInput),
-          eq(usersTable.user_name, normalizedInput)
-        )
+          eq(usersTable.user_name, normalizedInput),
+        ),
       );
     if (!user) throw new Error("User not found");
 
@@ -368,7 +368,7 @@ export async function verifyCodeService(email: string, code: string) {
 
     const hashedCode = hmacProcess(
       code,
-      process.env.HMAC_VERIFICATION_CODE_SECRET as string
+      process.env.HMAC_VERIFICATION_CODE_SECRET as string,
     );
 
     if (hashedCode !== otp.code) throw new Error("Invalid verification code");
@@ -376,7 +376,7 @@ export async function verifyCodeService(email: string, code: string) {
     const forgetpasswordToken = jwt.sign(
       { id: user.id, email: user.email },
       FORGETPASSWORD_SEC,
-      { expiresIn: "1hr" }
+      { expiresIn: "1hr" },
     );
     return { forgetpasswordToken };
   } catch (error) {
@@ -386,7 +386,7 @@ export async function verifyCodeService(email: string, code: string) {
 export async function resetPasswordService(
   resetToken: string,
   newPassword: string,
-  confirmNewpassword: string
+  confirmNewpassword: string,
 ) {
   try {
     if (newPassword !== confirmNewpassword) {

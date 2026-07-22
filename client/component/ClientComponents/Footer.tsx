@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import HerosectionWaitlist from "./HerosectionWaitlist";
+// import HerosectionWaitlist from "./HerosectionWaitlist";
 import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import { Link as ScrollLink } from "react-scroll";
 import Link from "next/link";
@@ -22,7 +22,7 @@ function Footer() {
         <h1 className="text-2xl md:text-3xl font-bold mb-6">
           Ready to Read? Enter your email to create or restart your membership.
         </h1>
-        <HerosectionWaitlist />
+        {/* <HerosectionWaitlist /> */}
       </div>
 
       {/* Middle Footer Links */}

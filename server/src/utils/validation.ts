@@ -90,7 +90,7 @@ export const validateupdates = Joi.object({
       "Short Stories",
       "Urban Fiction",
       "Mystery",
-      "Inspirational"
+      "Inspirational",
     )
     .required()
     .messages({
@@ -98,4 +98,12 @@ export const validateupdates = Joi.object({
       "string.empty": "Category is required",
       "any.required": "Category is required",
     }),
+});
+export const depositSchema = Joi.object({
+  amount: Joi.number().required().positive().max(5000).messages({
+    "number.base": "Amount must be a number",
+    "any.required": "Amount is required",
+    "number.positive": "Amount must be greater than 0",
+    "number.max": "Maximum deposit amount is 5000 points",
+  }),
 });
