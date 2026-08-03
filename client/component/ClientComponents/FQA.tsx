@@ -7,29 +7,28 @@ function FQA() {
 
   const faqs = [
     {
-      question: "What is BookFlix?",
+      question: "What is ReadNest?",
       answer:
-        "BookFlix is an online platform that allows users to explore, read, and discover a wide range of books across different genres.",
+        "ReadNest is an online platform that allows users to explore, read, and discover a wide range of books across different genres.",
     },
     {
-      question: "Do I need an account to use BookFlix?",
+      question: "Do I need an account to use ReadNest?",
       answer:
         "Yes, you need to create an account to access personalized recommendations and save your favorite books.",
     },
     {
-      question: "Is BookFlix free to use?",
+      question: "Is ReadNest free to use?",
       answer:
-        "BookFlix offers both free and premium plans. Free users can read selected books, while premium users enjoy unlimited access.",
+        "ReadNest offers  free books. Free users can read selected books, while premium users enjoy unlimited access.",
     },
     {
       question: "Can I download books to read offline?",
-      answer:
-        "Offline downloads are available only for premium users through our mobile app.",
+      answer: "NO offline for now,only on web",
     },
     {
-      question: "Can I publish my own books on BookFlix?",
+      question: "Can I publish my own books on ReadNest?",
       answer:
-        "Yes! Authors can sign up as publishers and upload their works directly to the BookFlix platform.",
+        "Yes! Authors can sign up as publishers and upload their works directly to the ReadNest platform.",
     },
   ];
 

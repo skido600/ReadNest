@@ -64,11 +64,11 @@ export function useLogin() {
       }
       if (
         result.message?.includes(
-          "Your OTP expired. A new verification code has been sent to your email. Please check your inbox."
+          "Your OTP expired. A new verification code has been sent to your email. Please check your inbox.",
         ) ||
         result.message?.includes("OTP expired") ||
         result.message?.includes(
-          "check your email box and verify your email before logging in."
+          "check your email box and verify your email before logging in.",
         )
       ) {
         //  OTP REQUIRED CASE

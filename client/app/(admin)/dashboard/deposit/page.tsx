@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { depositService } from "@/fetchs/services";
 
 export default function DepositPage() {
   const [amount, setAmount] = useState("");
-
+  const queryClient = useQueryClient();
   const depositMutation = useMutation({
     mutationFn: depositService,
 
@@ -15,6 +15,9 @@ export default function DepositPage() {
       toast.success(data.message || "Deposit successful");
 
       setAmount("");
+      queryClient.invalidateQueries({
+        queryKey: ["user-points"],
+      });
     },
 
     onError: (error: any) => {

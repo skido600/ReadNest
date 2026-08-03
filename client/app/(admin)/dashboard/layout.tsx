@@ -3,12 +3,31 @@ import { TanstackQueryProvider } from "@/app/context/TanstackQueryProvider";
 import { UserProvider } from "@/app/context/UserContext";
 import Usersidebar from "@/component/ClientComponents/Usersidebar";
 import UserNavBar from "@/component/UserNavBar";
-// TanstackQueryProvider
-export default function AdminLayout({
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL!;
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+
+  const res = await fetch(`${backendUrl}/api/book/me`, {
+    headers: {
+      Cookie: cookieStore.toString(),
+    },
+    cache: "no-store",
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    redirect("/login");
+  }
+
+  if (data.data.role !== "admin" && data.data.role !== "user") {
+    redirect("/");
+  }
+
   return (
     <TanstackQueryProvider>
       <UserProvider>

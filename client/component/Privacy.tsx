@@ -10,7 +10,7 @@ function Privacy() {
 
         <p className="mb-6 text-gray-700  text-sm">
           This Privacy Statement explains how we collect, use, and disclose your
-          personal information when you use the "Bookflix service" or anywhere
+          personal information when you use the "ReadNest service" or anywhere
           we display or reference this Privacy Statement. It also explains your
           privacy rights and how to exercise them.
         </p>
@@ -22,7 +22,7 @@ function Privacy() {
             information, or how to exercise your privacy rights, please contact
             us at{" "}
             <span className="font-medium text-blue-600">
-              privacy@bookflix.com
+              ebisileonard@gmail.com
             </span>
             .
           </p>
@@ -43,7 +43,7 @@ function Privacy() {
             </li>
             <li>
               <span className="font-medium">Usage information:</span>{" "}
-              Interactions with Bookflix content, search queries.
+              Interactions with ReadNest content, search queries.
             </li>
             <li>
               <span className="font-medium">
@@ -60,7 +60,7 @@ function Privacy() {
           </h2>
           <p className="text-gray-700 mb-2">
             We use your information to provide, maintain, and improve the
-            Bookflix service, including:
+            ReadNest service, including:
           </p>
           <ul className="list-disc list-inside text-gray-700 space-y-2">
             <li>Personalizing content and recommendations</li>
@@ -107,7 +107,7 @@ function Privacy() {
         <section className="mb-8  text-sm">
           <h2 className="text-2xl font-semibold mb-4">Minors</h2>
           <p className="text-gray-700">
-            The Bookflix service is intended for users 18 and above. Minors may
+            The ReadNest service is intended for users 18 and above. Minors may
             use the service only with parental supervision.
           </p>
         </section>
@@ -118,7 +118,7 @@ function Privacy() {
           </h2>
           <p className="text-gray-700">
             We may update this Privacy Policy from time to time. Your continued
-            use of Bookflix after any changes constitutes acceptance of the
+            use of ReadNest after any changes constitutes acceptance of the
             updated Privacy Policy.
           </p>
         </section>

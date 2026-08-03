@@ -8,9 +8,9 @@ const helpSections = [
     title: "Account & Membership",
     items: [
       {
-        name: "How to create a Bookflix account",
+        name: "How to create a ReadNest account",
         description:
-          "To create an account, go to Bookflix.com, click 'Sign Up', and follow the instructions to enter your email, password, and other details.",
+          "To create an account, go to ReadNest.com, click 'Sign Up', and follow the instructions to enter your email, password, and other details.",
       },
       {
         name: "Updating your payment methods",
@@ -33,9 +33,9 @@ const helpSections = [
     title: "Streaming & Devices",
     items: [
       {
-        name: "Supported devices for Bookflix",
+        name: "Supported devices for ReadNest",
         description:
-          "Bookflix can be accessed on smart TVs, mobile devices, tablets, computers, and streaming devices.",
+          "ReadNest can be accessed on smart TVs, mobile devices, tablets, computers, and streaming devices.",
       },
       {
         name: "How to stream on multiple devices",
@@ -60,7 +60,7 @@ const helpSections = [
       {
         name: "Personalized content recommendations",
         description:
-          "Bookflix analyzes your viewing history to recommend movies and shows tailored to your tastes.",
+          "ReadNest analyzes your viewing history to recommend movies and shows tailored to your tastes.",
       },
       {
         name: "How ratings and reviews work",
@@ -110,7 +110,7 @@ function Help() {
         <Back />
         <h1 className="text-4xl font-bold mb-6 ">Help Center</h1>
         <p className="mb-8 text-gray-700 ">
-          Welcome to the Bookflix Help Center. Click on a topic to see more
+          Welcome to the ReadNest Help Center. Click on a topic to see more
           details.
         </p>
 
@@ -149,9 +149,9 @@ function Help() {
         <p className="text-gray-500 text-sm mt-12 text-center">
           Still need help? Contact us at{" "}
           <a
-            href="mailto:support@bookflix.com"
+            href="mailto:support@ReadNest.com"
             className="text-blue-600 underline">
-            support@bookflix.com
+            ebisileonard@gmail.com
           </a>
         </p>
       </div>

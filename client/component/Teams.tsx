@@ -6,20 +6,20 @@ function Teams() {
     <section className="min-h-screen pt-34 bg-gray-50 py-12 px-6 md:px-20">
       <div className="max-w-4xl mx-auto">
         <Back />
-        <h1 className="text-4xl font-bold mb-6 ">Bookflix Terms of Use</h1>
+        <h1 className="text-4xl font-bold mb-6 ">ReadNest Terms of Use</h1>
 
         <p className="mb-6 text-gray-700  text-sm">
-          Bookflix provides a personalized subscription service that allows
-          members to access entertainment content (“Bookflix content”) over the
+          ReadNest provides a personalized subscription service that allows
+          members to access entertainment content (“ReadNest content”) over the
           Internet on certain Internet-connected TVs, computers, and other
-          devices ("Bookflix ready devices").
+          devices ("ReadNest ready devices").
         </p>
 
         <section className="mb-8  text-sm">
           <h2 className="text-2xl font-semibold mb-4">Membership</h2>
           <p className="text-gray-700 mb-2">
-            Your Bookflix membership will continue until terminated. To use the
-            Bookflix service, you must have Internet access and a Bookflix ready
+            Your ReadNest membership will continue until terminated. To use the
+            ReadNest service, you must have Internet access and a ReadNest ready
             device, and provide one or more Payment Methods.
           </p>
           <p className="text-gray-700 mb-2">
@@ -45,14 +45,14 @@ function Teams() {
         </section>
 
         <section className="mb-8  text-sm">
-          <h2 className="text-2xl font-semibold mb-4">Bookflix Service</h2>
+          <h2 className="text-2xl font-semibold mb-4">ReadNest Service</h2>
           <p className="text-gray-700 mb-2">
-            Bookflix content is for personal, non-commercial use and may not be
+            ReadNest content is for personal, non-commercial use and may not be
             shared beyond your household unless allowed by your subscription
             plan.
           </p>
           <p className="text-gray-700 mb-2">
-            You agree to use Bookflix and all features in accordance with
+            You agree to use ReadNest and all features in accordance with
             applicable laws and restrictions. Unauthorized copying,
             redistribution, or commercial use is prohibited.
           </p>
@@ -66,7 +66,7 @@ function Teams() {
         <section className="mb-8  text-sm">
           <h2 className="text-2xl font-semibold mb-4">Account and Passwords</h2>
           <p className="text-gray-700 mb-2">
-            You are responsible for activity that occurs through your Bookflix
+            You are responsible for activity that occurs through your ReadNest
             account. Do not share your password or payment details.
           </p>
           <p className="text-gray-700 mb-2">
@@ -79,7 +79,7 @@ function Teams() {
             Warranties and Liability
           </h2>
           <p className="text-gray-700 mb-2">
-            Bookflix service is provided "as is" without warranties. We are not
+            ReadNest service is provided "as is" without warranties. We are not
             liable for interruptions or errors. Consumer protection laws apply
             where mandatory.
           </p>
@@ -93,18 +93,18 @@ function Teams() {
               kingdom.
             </li>
             <li>
-              Unsolicited Materials: Bookflix does not accept unsolicited
+              Unsolicited Materials: ReadNest does not accept unsolicited
               content ideas.
             </li>
             <li>
-              Customer Support: Visit the Bookflix Help Center for assistance.
+              Customer Support: Visit the ReadNest Help Center for assistance.
             </li>
             <li>
-              Changes to Terms: Bookflix may update these terms. You can cancel
+              Changes to Terms: ReadNest may update these terms. You can cancel
               your membership if you do not accept changes.
             </li>
             <li>
-              Force Majeure: Bookflix is not liable for service interruptions
+              Force Majeure: ReadNest is not liable for service interruptions
               caused by events beyond our reasonable control.
             </li>
           </ul>

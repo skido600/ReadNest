@@ -9,7 +9,7 @@ function AuthNav() {
         <Link href="/">
           <div className="flex items-center">
             <Image
-              src="/logo/IMG-20251020-WA0133-removebg-preview.png"
+              src="/logo/white_logo.png"
               alt="logo"
               width={0}
               height={0}

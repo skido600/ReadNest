@@ -39,7 +39,7 @@ export default function DiscoveryboardPage() {
   }
 
   return (
-    <div className="">
+    <div className="mb-8">
       <h1 className="text-3xl font-bold mb-8">Discover Books</h1>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">

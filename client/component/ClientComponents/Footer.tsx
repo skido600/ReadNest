@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 // import HerosectionWaitlist from "./HerosectionWaitlist";
-import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+// import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import { Link as ScrollLink } from "react-scroll";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,7 +28,7 @@ function Footer() {
       {/* Middle Footer Links */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8 text-sm text-gray-400 mb-12">
         <div>
-          <h3 className="text-white font-semibold mb-3">BookFlix</h3>
+          <h3 className="text-white font-semibold mb-3">ReadNest</h3>
           <ul className="space-y-4">
             {firstdetailsList.map((items: any, index: number) => (
               <Link key={index} href={items.link} className="cursor-pointer">
@@ -59,7 +59,7 @@ function Footer() {
             </li>
           </ul>
         </div>
-
+        {/* 
         <div>
           <h3 className="text-white font-semibold mb-3">Follow Us</h3>
           <div className="flex gap-4 mt-2">
@@ -68,14 +68,14 @@ function Footer() {
             <Twitter className="w-5 h-5 text-gray-400 hover:text-pink-500 cursor-pointer" />
             <Youtube className="w-5 h-5 text-gray-400 hover:text-pink-500 cursor-pointer" />
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Bottom Section */}
       <div className="border-t border-white/10 pt-6 text-center text-gray-500 text-sm">
         <p>
           © {new Date().getFullYear()}{" "}
-          <span className="text-pink-500">BookFlix</span>. All rights reserved.
+          <span className="text-pink-500">ReadNest</span>. All rights reserved.
         </p>
       </div>
     </footer>

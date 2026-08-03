@@ -171,3 +171,77 @@ export const uploadBookService = async (formData: FormData) => {
 
   return data;
 };
+export const deleteBookService = async (id: string) => {
+  const response = await fetch(`${backendUrl}/api/admin/delete/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) throw data;
+
+  return data;
+};
+export const editBookService = async (
+  id: string,
+  values: {
+    title: string;
+    author: string;
+    category: string;
+    description: string;
+    isFeatured: boolean;
+  },
+) => {
+  const response = await fetch(`${backendUrl}/api/admin/editbook/${id}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(values),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) throw data;
+
+  return data;
+};
+
+export const updateBookFileService = async (id: string, file: File) => {
+  const formData = new FormData();
+  formData.append("book", file);
+
+  const response = await fetch(`${backendUrl}/api/admin/updatebookfile/${id}`, {
+    method: "PUT",
+    credentials: "include",
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) throw data;
+
+  return data;
+};
+
+export const updateBookCoverService = async (id: string, file: File) => {
+  const formData = new FormData();
+  formData.append("cover", file);
+
+  const response = await fetch(
+    `${backendUrl}/api/admin/updatebookcover/${id}`,
+    {
+      method: "PUT",
+      credentials: "include",
+      body: formData,
+    },
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) throw data;
+
+  return data;
+};
