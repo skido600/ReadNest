@@ -19,7 +19,7 @@ adminrouter.post(
     { name: "book", maxCount: 1 },
     { name: "cover", maxCount: 1 },
   ]),
-  uploadBook
+  uploadBook,
 );
 adminrouter.put(
   "/editbook/:id",
@@ -28,14 +28,14 @@ adminrouter.put(
     { name: "book", maxCount: 1 },
     { name: "cover", maxCount: 1 },
   ]),
-  updateBook
+  updateBook,
 );
 // update PDF only
 adminrouter.put(
   "/updatebookfile/:id",
   authMiddleware,
   upload.single("book"),
-  updateBookFile
+  updateBookFile,
 );
 
 // update cover only
@@ -43,7 +43,7 @@ adminrouter.put(
   "/updatebookcover/:id",
   authMiddleware,
   upload.single("cover"),
-  updateBookCover
+  updateBookCover,
 );
 
 adminrouter.delete("/delete/:id", authMiddleware, deleteBook);

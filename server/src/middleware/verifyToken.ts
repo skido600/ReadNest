@@ -20,7 +20,7 @@ export interface AuthRequest extends Request {
 export const authMiddleware = async (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const accessToken = req.cookies?.accessToken;
   const refreshToken = req.cookies?.refreshToken;
@@ -63,7 +63,7 @@ export const authMiddleware = async (
       //  Verify refresh token
       const refreshPayload = jwt.verify(
         refreshToken,
-        REFRESH_TOKEN_SECRET
+        REFRESH_TOKEN_SECRET,
       ) as any;
       //  Validate session in DB
       const session = await db
@@ -109,14 +109,14 @@ export const authMiddleware = async (
       //  Set new access token cookie
       res.cookie("accessToken", newAccessToken, {
         httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
         maxAge: 15 * 60 * 1000, // 15 mins
       });
       res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
       //  Attach user and continue

@@ -3,6 +3,7 @@ import type { Router } from "express";
 import {
   getBooks,
   getLatestBooks,
+  getMe,
   getFeaturedBooks,
   searchByTitle,
   readBook,
@@ -23,5 +24,6 @@ bookroute.post("/deposit", authMiddleware, authorize("user"), depositPoints);
 bookroute.get("/history", authMiddleware, authorize("user"), getReadHistory);
 bookroute.get("/title", authMiddleware, authorize("user"), searchByTitle);
 bookroute.get("/read/:bookId", authMiddleware, authorize("user"), readBook);
-bookroute.get("/single/:bookId", authMiddleware, getSingleBook);
+bookroute.get("/read/:bookId", authMiddleware, authorize("user"), readBook);
+bookroute.get("/me", authMiddleware, getMe);
 export default bookroute;

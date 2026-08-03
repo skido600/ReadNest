@@ -1,47 +1,31 @@
 {
   "featuredBooks": [
     {
-      "id": "ee79f7f2-253d-442d-aa82-63aa54349947",
-      "title": "wave",
-      "author": "wave2",
-      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768138368/cover/xcfrgnpkyqffj40v3ump.png",
+      "id": "d3286686-5feb-4586-ae11-2c814c2b5031",
+      "title": "Atomic habit",
+      "author": "james clear6",
+      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768531645/cover/gpi9w3i2emfhdwvzxci3.jpg",
       "isFeatured": true,
-      "category": "Horror"
+      "category": "Inspirational"
     }
   ],
   "latestBooks": [
     {
-      "id": "ee79f7f2-253d-442d-aa82-63aa54349947",
-      "title": "wave",
-      "author": "wave2",
-      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768138368/cover/xcfrgnpkyqffj40v3ump.png",
+      "id": "d3286686-5feb-4586-ae11-2c814c2b5031",
+      "title": "Atomic habit",
+      "author": "james clear6",
+      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768531645/cover/gpi9w3i2emfhdwvzxci3.jpg",
       "isFeatured": true,
-      "category": "Horror"
+      "category": "Inspirational"
     },
     {
-      "id": "1cb056e0-4dfe-4d77-b34a-408859bbd302",
-      "title": "wave",
-      "author": "wave2",
-      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768347484/cover/sv7wdlseu5uhqyljpcph.png",
+      "id": "c98adb19-d97d-4051-9294-773e8a4305eb",
+      "title": "Atomic habit",
+      "author": "james clear2",
+      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1783201055/cover/evzwk7bdj5tj3l0ofqty.jpg",
       "isFeatured": true,
-      "category": "Horror"
-    },
-    {
-      "id": "76ad0889-7863-4786-8211-a0b0a0fbb906",
-      "title": "wave",
-      "author": "wave2",
-      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768347554/cover/ehcjqn2y06yhieajunec.png",
-      "isFeatured": true,
-      "category": "Horror"
-    },
-    {
-      "id": "72aaec88-1602-4a1f-82bb-0559a4d4150c",
-      "title": "wave",
-      "author": "wave2",
-      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768347634/cover/pb1arfxxv0pvccftfwut.png",
-      "isFeatured": true,
-      "category": "Horror"
+      "category": "Inspirational"
     }
   ],
-  "updatedAt": "2026-01-13T23:40:39.602Z"
+  "updatedAt": "2026-08-03T18:25:53.562Z"
 }

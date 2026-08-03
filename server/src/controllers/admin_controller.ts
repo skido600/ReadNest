@@ -19,7 +19,7 @@ import * as bookService from "../services/admin_service.ts";
 export async function uploadBook(
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const bookFile = req.files?.book?.[0];
@@ -38,7 +38,7 @@ export async function uploadBook(
         res,
         false,
         400,
-        error.details[0]?.message as string
+        error.details[0]?.message as string,
       );
     }
     const wordCount = description.trim().split(/\s+/).length;
@@ -47,7 +47,7 @@ export async function uploadBook(
         res,
         false,
         400,
-        "Description must be at least 20 words"
+        "Description must be at least 20 words",
       );
     }
     if (!bookFile || !coverFile) {
@@ -65,7 +65,7 @@ export async function uploadBook(
 
     //  Upload cover image to Cloudinary
     const coverUpload = await uploadTocloudinary.uploadCoverBook(
-      coverFile.path
+      coverFile.path,
     );
     // Save to database
     await db.insert(booksTable).values({
@@ -96,13 +96,14 @@ export async function uploadBook(
 export async function updateBook(req: any, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const { title, author, isFeatured, category } = req.body;
+    const { title, author, isFeatured, category, description } = req.body;
 
     // Validate text fields
     const { error } = validateupdates.validate({
       title,
       author,
       isFeatured,
+      description,
       category,
     });
     if (error) {
@@ -110,7 +111,7 @@ export async function updateBook(req: any, res: Response, next: NextFunction) {
         res,
         false,
         400,
-        error.details[0]?.message as string
+        error.details[0]?.message as string,
       );
     }
 
@@ -131,7 +132,7 @@ export async function updateBook(req: any, res: Response, next: NextFunction) {
     if (author) updateData.author = author;
     if (category) updateData.category = category;
     if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
-
+    if (description) updateData.description = description;
     if (Object.keys(updateData).length === 0) {
       return HandleResponse(res, false, 400, "Nothing to update");
     }
@@ -151,7 +152,7 @@ export async function updateBook(req: any, res: Response, next: NextFunction) {
 export async function deleteBook(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const { id } = req.params;
@@ -185,7 +186,7 @@ export async function deleteBook(
 export async function updateBookFile(
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const { id } = req.params;
@@ -233,7 +234,7 @@ export async function updateBookFile(
 export async function updateBookCover(
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const { id } = req.params;

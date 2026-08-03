@@ -379,3 +379,28 @@ export async function depositPoints(
     next(error);
   }
 }
+
+export async function getMe(req: any, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user.id;
+
+    const [user] = await db
+      .select({
+        id: usersTable.id,
+        user_name: usersTable.user_name,
+        email: usersTable.email,
+        role: usersTable.role,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
+    if (!user) {
+      return HandleResponse(res, false, 404, "User not found");
+    }
+
+    return HandleResponse(res, true, 200, "User fetched successfully", user);
+  } catch (err) {
+    next(err);
+  }
+}

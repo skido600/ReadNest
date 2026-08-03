@@ -19,7 +19,7 @@ app.use(
   cors({
     origin: "http://localhost:3000",
     credentials: true,
-  })
+  }),
 );
 //middlewares
 app.use(express.urlencoded({ extended: true }));
@@ -36,19 +36,4 @@ app.use(notFound);
 app.listen(port, async () => {
   console.log(`Server running on port ${port}`);
   initalizeEmailWorker();
-  // initializePdfWorker();
 });
-
-// import fs from "fs";
-// import pdfParse from "pdf-parse";
-
-// const dataBuffer = fs.readFileSync(book.filePath);
-// const pdfData = await pdfParse(dataBuffer);
-
-// console.log("Total pages:", pdfData.numpages);
-
-// if (user.country === "NG") {
-//   // show Paystack checkout
-// } else {
-//   // show Stripe checkout
-// }

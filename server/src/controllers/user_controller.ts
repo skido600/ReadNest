@@ -23,7 +23,7 @@ import { clearAuthCookies } from "../utils/clearCookies.ts";
 export async function Signup(
   req: any,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const { user_name, email, password }: any = req.body;
@@ -32,7 +32,7 @@ export async function Signup(
       res,
       true,
       201,
-      "User registered successfully. Check your email for verification."
+      "User registered successfully. Check your email for verification.",
     );
   } catch (error) {
     if (error instanceof Error) {
@@ -49,7 +49,7 @@ export async function Signup(
 export async function VerifyEmail(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const { email, code } = req.body;
@@ -79,7 +79,7 @@ export async function VerifyEmail(
             res,
             false,
             500,
-            error.message || "Something went wrong"
+            error.message || "Something went wrong",
           );
       }
     } else {
@@ -143,7 +143,7 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
             res,
             false,
             500,
-            error.message || "Something went wrong"
+            error.message || "Something went wrong",
           );
       }
     } else {
@@ -156,7 +156,7 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
 export const forgotPassword = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { email } = req.body;
@@ -167,7 +167,7 @@ export const forgotPassword = async (
       true,
       200,
       forgetpasswordres.message,
-      forgetpasswordres.email
+      forgetpasswordres.email,
     );
   } catch (error) {
     if (error instanceof Error) {
@@ -183,7 +183,7 @@ export const forgotPassword = async (
 export const verifyCode = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { email, code } = req.body;
@@ -194,7 +194,7 @@ export const verifyCode = async (
       true,
       200,
       "Code verified sucessfully",
-      forgetpasswordToken
+      forgetpasswordToken,
     );
   } catch (error) {
     if (error instanceof Error) {
@@ -217,7 +217,7 @@ export const verifyCode = async (
 export const resetPassword = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { resetToken, newPassword, confirmNewpassword }: any = req.body;
@@ -245,7 +245,7 @@ export const resetPassword = async (
 export const Logout = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const refreshToken = req.cookies?.refreshToken;
@@ -258,18 +258,6 @@ export const Logout = async (
     }
     // Clear cookies (must match cookie options)
     clearAuthCookies(res);
-    // // Clear cookies
-    // res.clearCookie("accessToken", {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production",
-    //   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    // });
-
-    // res.clearCookie("refreshToken", {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production",
-    //   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    // });
 
     return HandleResponse(res, true, 200, "Logged out successfully");
   } catch (error) {

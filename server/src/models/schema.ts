@@ -14,7 +14,7 @@ export const usersTable = pgTable("users", {
   user_name: varchar({ length: 255 }).notNull(),
   email: varchar({ length: 255 }).notNull().unique(),
   password: text().notNull(),
-  // points: integer("points").notNull().default(25),
+
   country: text(),
   role: varchar({ length: 50 }).default("user"),
   otp: text(),
