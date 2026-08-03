@@ -26,4 +26,5 @@ bookroute.get("/title", authMiddleware, authorize("user"), searchByTitle);
 bookroute.get("/read/:bookId", authMiddleware, authorize("user"), readBook);
 bookroute.get("/read/:bookId", authMiddleware, authorize("user"), readBook);
 bookroute.get("/me", authMiddleware, getMe);
+bookroute.get("/featured", getFeaturedBooks);
 export default bookroute;

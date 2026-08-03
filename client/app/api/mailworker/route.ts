@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       );
     }
     await transporter.sendMail({
-      from: `"BookFlex" <${process.env.EMAIL_USER}>`,
+      from: `"ReadNest" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,
