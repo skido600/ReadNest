@@ -1,10 +1,10 @@
-# BookFlex
+# ReadNest
 
 A modern digital reading platform where users discover, unlock, and read books online using a point‑based access system.
 
 ## Overview
 
-BookFlex is an online reading platform that makes it easy to explore, unlock, and read books directly in your browser. Users earn points and spend them to open books they’re interested in, while administrators can upload and manage an entire digital library. It’s designed from the ground up to feel fast, responsive, and intuitive — whether you’re browsing the latest releases, searching for a specific title, or diving into an administrative dashboard.
+ReadNest is an online reading platform that makes it easy to explore, unlock, and read books directly in your browser. Users earn points and spend them to open books they’re interested in, while administrators can upload and manage an entire digital library. It’s designed from the ground up to feel fast, responsive, and intuitive — whether you’re browsing the latest releases, searching for a specific title, or diving into an administrative dashboard.
 
 ---
 
