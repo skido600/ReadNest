@@ -31,6 +31,13 @@ app.use("/api/book", bookroute);
 app.use("/api/profile", profile);
 //error handling
 
+// status
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "online",
+    uptime: process.uptime(),
+  });
+});
 app.use(HandleError);
 app.use(notFound);
 app.listen(port, async () => {
