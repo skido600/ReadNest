@@ -1,23 +1,15 @@
 {
   "featuredBooks": [
     {
-      "id": "d3286686-5feb-4586-ae11-2c814c2b5031",
+      "id": "c98adb19-d97d-4051-9294-773e8a4305eb",
       "title": "Atomic habit",
-      "author": "james clear6",
-      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768531645/cover/gpi9w3i2emfhdwvzxci3.jpg",
+      "author": "james clear2",
+      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1783201055/cover/evzwk7bdj5tj3l0ofqty.jpg",
       "isFeatured": true,
       "category": "Inspirational"
     }
   ],
   "latestBooks": [
-    {
-      "id": "d3286686-5feb-4586-ae11-2c814c2b5031",
-      "title": "Atomic habit",
-      "author": "james clear6",
-      "cover": "https://res.cloudinary.com/dgsbcan3j/image/upload/v1768531645/cover/gpi9w3i2emfhdwvzxci3.jpg",
-      "isFeatured": true,
-      "category": "Inspirational"
-    },
     {
       "id": "c98adb19-d97d-4051-9294-773e8a4305eb",
       "title": "Atomic habit",
@@ -27,5 +19,5 @@
       "category": "Inspirational"
     }
   ],
-  "updatedAt": "2026-08-03T18:25:53.562Z"
+  "updatedAt": "2026-08-28T23:09:53.766Z"
 }

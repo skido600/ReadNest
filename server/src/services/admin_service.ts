@@ -6,12 +6,12 @@ import { eq } from "drizzle-orm";
 import { validateupdates } from "../utils/validation.ts";
 import { uploadTocloudinary } from "../utils/uploadTocloudinary.ts";
 import { generateLandingCache } from "../utils/generateLandingCache.ts";
-// uploadBookService;
+
 export async function uploadBookService(req: any) {
   try {
     const bookFile = req.files?.book?.[0];
     const coverFile = req.files?.cover?.[0];
-    const { title, author, isFeatured, category } = req.body;
+    const { title, author, isFeatured, description, category } = req.body;
 
     const { error } = validateupdates.validate({
       title,
@@ -28,13 +28,14 @@ export async function uploadBookService(req: any) {
     const pageCount = pdfDoc.getPageCount();
     const bookUpload = await uploadTocloudinary.uploadBook(bookFile.path);
     const coverUpload = await uploadTocloudinary.uploadCoverBook(
-      coverFile.path
+      coverFile.path,
     );
 
     await db.insert(booksTable).values({
       title,
       author,
       isFeatured,
+      description,
       userId: req.user.id,
       category,
       filePath: bookUpload.url,
@@ -150,7 +151,7 @@ export async function updateBookFileService(req: any) {
 //updatecoverservice
 export async function updateBookCoverService(
   id: string,
-  file: Express.Multer.File
+  file: Express.Multer.File,
 ) {
   try {
     if (!file) throw { status: 400, message: "Cover file required" };
