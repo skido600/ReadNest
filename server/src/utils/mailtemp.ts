@@ -9,17 +9,17 @@ class STMPservice {
     "src",
     "utils",
     "template",
-    "sendotp.html"
+    "sendotp.html",
   );
   private static forgetpasswordtemp = path.join(
     process.cwd(),
     "src",
     "utils",
     "template",
-    "forgetpassword.html"
+    "forgetpassword.html",
   );
-  //   private static EMAIL_API_URL =
-  //     "https://emailsender-theta.vercel.app/send-email";
+  private static EMAIL_API_URL =
+    "https://emailsender-theta.vercel.app/send-email";
 
   //   public static async SendingOtp(
   //     user: { user_name: string; email: string },
@@ -61,7 +61,7 @@ class STMPservice {
   // console.log("data", data);
   public static async SendingOtp(
     user: { user_name: string; email: string },
-    otpCode: string
+    otpCode: string,
   ) {
     try {
       const htmlContent = fs
@@ -71,30 +71,38 @@ class STMPservice {
         .replace(/{{year}}/g, new Date().getFullYear().toString())
         .replace(/{{company_name}}/g, "BookFlex");
 
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
+      // const transporter = nodemailer.createTransport({
+      //   service: "gmail",
+      //   auth: {
+      //     user: process.env.EMAIL_USER,
+      //     pass: process.env.EMAIL_PASS,
+      //   },
+      // });
 
-      await transporter.sendMail({
-        from: `"BookFlex" <${process.env.EMAIL_USER}>`,
-        to: user.email,
-        subject: "Your OTP Code - BookFlex",
-        text: `Hello ${user.user_name}, your OTP code is ${otpCode}`,
-        html: htmlContent,
+      // await transporter.sendMail({
+      //   from: `"BookFlex" <${process.env.EMAIL_USER}>`,
+      //   to: user.email,
+      //   subject: "Your OTP Code - BookFlex",
+      //   text: `Hello ${user.user_name}, your OTP code is ${otpCode}`,
+      //   html: htmlContent,
+      // });
+      const response = await fetch(this.EMAIL_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: user.email,
+          subject: "Your OTP Code - BookFlex",
+          html: htmlContent,
+        }),
       });
-
-      console.log(`OTP sent to ${user.email}`);
+      console.log(`OTP sent to ${user.email}`, response);
     } catch (error) {
       console.error("Error sending OTP:", error);
     }
   }
   public static async forgetpassword(
     user: { user_name: string; email: string },
-    otpCode: string
+    otpCode: string,
   ) {
     try {
       const htmlContent = fs
@@ -104,23 +112,34 @@ class STMPservice {
         .replace(/{{year}}/g, new Date().getFullYear().toString())
         .replace(/{{company_name}}/g, "BookFlex");
 
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
+      // const transporter = nodemailer.createTransport({
+      //   service: "gmail",
+      //   auth: {
+      //     user: process.env.EMAIL_USER,
+      //     pass: process.env.EMAIL_PASS,
+      //   },
+      // });
+
+      // await transporter.sendMail({
+      //   from: `"BookFlex" <${process.env.EMAIL_USER}>`,
+      //   to: user.email,
+      //   subject: "Your OTP Code - BookFlex",
+      //   text: `Hello ${user.user_name}, your OTP code is ${otpCode}`,
+      //   html: htmlContent,
+      // });
+      const response = await fetch(this.EMAIL_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          to: user.email,
+          subject: "Your OTP Code - BookFlex",
+          text: `Hello ${user.user_name}, your OTP code is ${otpCode}`,
+          html: htmlContent,
+        }),
       });
-
-      await transporter.sendMail({
-        from: `"BookFlex" <${process.env.EMAIL_USER}>`,
-        to: user.email,
-        subject: "Your OTP Code - BookFlex",
-        text: `Hello ${user.user_name}, your OTP code is ${otpCode}`,
-        html: htmlContent,
-      });
-
-      console.log(`OTP sent to ${user.email}`);
+      console.log(`OTP sent to ${user.email}`, response);
     } catch (error) {
       console.error("Error sending OTP:", error);
     }
