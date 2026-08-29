@@ -61,9 +61,9 @@ export function useOtpVerification(email: string) {
         body: JSON.stringify({ email, code }),
       });
 
-      console.log("email check", email);
+      // console.log("email check", email);
       const result = await res.json();
-      console.log(result);
+      // console.log(result);
       if (result.success) {
         toast.success(result.message, { duration: 10000 });
         setShowOtpModal(false);
@@ -92,7 +92,7 @@ export function useOtpVerification(email: string) {
 
   const handleOtpKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
-    index: number
+    index: number,
   ) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       document.getElementById(`otp-${index - 1}`)?.focus();

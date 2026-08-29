@@ -16,7 +16,7 @@ function useContactform() {
   });
   const [loader, setLoader] = useState<boolean>(false);
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormdata((prev) => ({
@@ -55,9 +55,7 @@ function useContactform() {
       } else {
         toast.success(response.message);
       }
-      console.log(response, "from response form");
     } catch (error) {
-      console.log(error);
       toast.error((error as Error).message);
     } finally {
       setLoader(false);

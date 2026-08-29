@@ -34,8 +34,8 @@ app.use("/api/profile", profile);
 // status
 app.get("/health", (req, res) => {
   res.status(200).json({
-    status: "online",
-    uptime: process.uptime(),
+    success: true,
+    message: "server is active 😍",
   });
 });
 app.use(HandleError);

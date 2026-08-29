@@ -6,6 +6,7 @@ import ConditionalFooter from "@/component/ClientComponents/ConditionalshowFoote
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "next-themes";
 import { TanstackQueryProvider } from "./context/TanstackQueryProvider";
+import ServerStatus from "@/component/ServerStatus";
 
 const siteUrl = "https://read-nest-431c.vercel.app";
 export const metadata: Metadata = {
@@ -71,6 +72,7 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <ConditionalNav />
             <Toaster />
+            <ServerStatus />
             {children}
             <ConditionalFooter />{" "}
           </ThemeProvider>
