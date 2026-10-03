@@ -142,7 +142,7 @@ export const LoginService = async (email: string, password: string) => {
   try {
     const normalizedInput = email.toLowerCase().trim();
 
-    //  Find user by email or username
+    // Find user by email or username
     const [user] = await db
       .select()
       .from(usersTable)
@@ -155,7 +155,7 @@ export const LoginService = async (email: string, password: string) => {
 
     if (!user) throw new Error("User not found");
 
-    //  Get or create login security row
+    // Get or create login security row
     let [security] = await db
       .select()
       .from(loginSecurityTable)
@@ -184,43 +184,70 @@ export const LoginService = async (email: string, password: string) => {
       const lockExpires = new Date(
         security.createdAt.getTime() + LOCK_DURATION,
       );
+
       if (lockExpires > new Date()) {
         throw new Error(
           `Account locked due to too many failed attempts. Try again at ${lockExpires.toLocaleTimeString()}`,
         );
-      } else {
-        // Lock expired → reset counter
-        await db
-          .update(loginSecurityTable)
-          .set({
-            failedAttempts: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(loginSecurityTable.userId, user.id));
-
-        // Reset local variable
-        security.failedAttempts = 0;
-        security.createdAt = new Date();
       }
+
+      // Lock expired → reset counter
+      const now = new Date();
+
+      await db
+        .update(loginSecurityTable)
+        .set({
+          failedAttempts: 0,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .where(eq(loginSecurityTable.userId, user.id));
+
+      security.failedAttempts = 0;
+      security.createdAt = now;
     }
 
-    //  Check if email is verified
+    // CHECK PASSWORD FIRST
+
+    const validPassword = await argon2.verify(user.password, password);
+
+    if (!validPassword) {
+      const now = new Date();
+
+      await db
+        .update(loginSecurityTable)
+        .set({
+          failedAttempts: security.failedAttempts + 1,
+          createdAt: security.failedAttempts === 0 ? now : security.createdAt,
+          updatedAt: now,
+        })
+        .where(eq(loginSecurityTable.userId, user.id));
+
+      throw new Error("Invalid email or password");
+    }
+
+    // PASSWORD IS CORRECT
+    // NOW CHECK EMAIL VERIFICATION
+
     if (!user.isVerified) {
       const [otp] = await db
         .select()
         .from(otpTable)
         .where(eq(otpTable.userId, user.id));
+
       const isExpired =
         !otp || Date.now() > new Date(otp.createdAt).getTime() + 10 * 60 * 1000;
 
       if (isExpired) {
         const code = Otpcode();
+
         const hashedCode = hmacProcess(
           code,
           process.env.HMAC_VERIFICATION_CODE_SECRET as string,
         );
+
         await db.delete(otpTable).where(eq(otpTable.userId, user.id));
+
         await db.insert(otpTable).values({
           userId: user.id,
           email: user.email,
@@ -231,12 +258,15 @@ export const LoginService = async (email: string, password: string) => {
           "send-email",
           {
             type: "otp",
-            user: user,
+            user,
             verificationLink: code,
           },
           {
             attempts: 3,
-            backoff: { type: "exponential", delay: 3000 },
+            backoff: {
+              type: "exponential",
+              delay: 3000,
+            },
             removeOnComplete: true,
             removeOnFail: true,
           },
@@ -245,32 +275,16 @@ export const LoginService = async (email: string, password: string) => {
         throw new Error(
           "Your OTP expired. A new verification code has been sent to your email. Please check your inbox.",
         );
-      } else {
-        throw new Error(
-          "check your email box and verify your email before logging in.",
-        );
       }
+
+      throw new Error(
+        "check your email box and verify your email before logging in.",
+      );
     }
 
-    //  Check password
-    const validPassword = await argon2.verify(user.password, password);
+    // SUCCESSFUL LOGIN
 
-    if (!validPassword) {
-      // Increment failed attempts
-      await db
-        .update(loginSecurityTable)
-        .set({
-          failedAttempts: security.failedAttempts + 1,
-          createdAt:
-            security.failedAttempts === 0 ? new Date() : security.createdAt,
-          updatedAt: new Date(),
-        })
-        .where(eq(loginSecurityTable.userId, user.id));
-
-      throw new Error("Invalid email or password");
-    }
-
-    //  Reset failedAttempts on successful login
+    // Reset failed attempts
     if (security.failedAttempts > 0) {
       await db
         .update(loginSecurityTable)
@@ -282,11 +296,15 @@ export const LoginService = async (email: string, password: string) => {
         .where(eq(loginSecurityTable.userId, user.id));
     }
 
-    //  Generate tokens
+    // Generate tokens
     const accessToken = Tokens.accessToken(user);
     const refreshToken = Tokens.refreshToken(user);
 
-    return { user, accessToken, refreshToken };
+    return {
+      user,
+      accessToken,
+      refreshToken,
+    };
   } catch (error) {
     throw error;
   }
