@@ -16,13 +16,13 @@ function Usersidebar() {
   const { user } = useUser();
   const pathname = usePathname();
   // Lock page scrolling when sidebar is open
-  useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
+  // useEffect(() => {
+  //   document.body.style.overflow = isOpen ? "hidden" : "";
 
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
+  //   return () => {
+  //     document.body.style.overflow = "";
+  //   };
+  // }, [isOpen]);
   // useEffect(() => {
   //   const isBookReader =
   //     pathname.startsWith("/dashboard/") && pathname.split("/").length === 3;
@@ -92,7 +92,7 @@ function Usersidebar() {
       <aside
         className={`
           fixed inset-y-0 left-0 z-50
-          flex h-screen w-64 flex-col
+          flex  w-64 flex-col
           border-r border-neutral-200 dark:border-neutral-800
           bg-white dark:bg-black
           shadow-xl
