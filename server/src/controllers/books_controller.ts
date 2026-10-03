@@ -482,3 +482,96 @@ export async function downloadBook(
     next(error);
   }
 }
+
+export async function downloadBook2(
+  req: any,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const userId = req.user.id;
+    const { bookId } = req.params;
+
+    if (!bookId) {
+      return HandleResponse(res, false, 400, "Book id is required");
+    }
+
+    // Check if user has already unlocked/read this book
+    const history = await db
+      .select({ id: historyTable.id })
+      .from(historyTable)
+      .where(
+        and(eq(historyTable.userId, userId), eq(historyTable.bookId, bookId)),
+      )
+      .limit(1);
+
+    if (history.length === 0) {
+      return HandleResponse(
+        res,
+        false,
+        403,
+        "You must unlock and read this book before downloading it",
+      );
+    }
+
+    // Get book
+    const books = await db
+      .select({
+        id: booksTable.id,
+        title: booksTable.title,
+        filePath: booksTable.filePath,
+      })
+      .from(booksTable)
+      .where(and(eq(booksTable.id, bookId), eq(booksTable.status, "ready")))
+      .limit(1);
+
+    const book = books[0];
+
+    if (!book) {
+      return HandleResponse(res, false, 404, "Book not found");
+    }
+
+    if (!book.filePath) {
+      return HandleResponse(res, false, 404, "Book PDF not found");
+    }
+
+    // Fetch PDF from Cloudinary
+    const response = await fetch(book.filePath);
+
+    if (!response.ok || !response.body) {
+      return HandleResponse(res, false, 500, "Failed to fetch book PDF");
+    }
+
+    const filename = `${book.title || "book"}`
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+      .trim();
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${filename}.pdf"`,
+    );
+
+    res.setHeader("Content-Type", "application/pdf");
+
+    const contentLength = response.headers.get("content-length");
+
+    if (contentLength) {
+      res.setHeader("Content-Length", contentLength);
+    }
+
+    const reader = response.body.getReader();
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      res.write(Buffer.from(value));
+    }
+
+    res.end();
+  } catch (error) {
+    console.error("Download book error:", error);
+    next(error);
+  }
+}
