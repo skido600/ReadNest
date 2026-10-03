@@ -1,6 +1,14 @@
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 import toast from "react-hot-toast";
+
+function getFilenameFromDisposition(disposition: string | null) {
+  if (!disposition) return "book.pdf";
+
+  const match = disposition.match(/filename="([^"]+)"/);
+
+  return match?.[1] || "book.pdf";
+}
 export async function logout(router: any) {
   try {
     const data = await fetch(`${backendUrl}/api/authv1/logout`, {
@@ -271,4 +279,29 @@ export async function checkServer() {
   }
 
   return response.json();
+}
+
+export async function downloadBookService(bookId: string) {
+  const response = await fetch(`${backendUrl}/api/book/download/${bookId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+
+    throw new Error(error?.message || "Failed to download book");
+  }
+
+  const blob = await response.blob();
+  console.log(
+    "CONTENT DISPOSITION:",
+    response.headers.get("content-disposition"),
+  );
+  return {
+    blob,
+    filename: getFilenameFromDisposition(
+      response.headers.get("content-disposition"),
+    ),
+  };
 }

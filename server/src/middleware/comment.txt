@@ -1,0 +1,349 @@
+import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { and, eq } from "drizzle-orm";
+
+import { db } from "../configs/dbconnection.ts";
+import { usersTable, userSession } from "../models/schema.ts";
+
+import Tokens from "../utils/JWT_helper.ts";
+import { clearAuthCookies } from "../utils/clearCookies.ts";
+
+export const authMiddleware = async (
+  req: any,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const accessToken = req.cookies?.accessToken;
+    const refreshToken = req.cookies?.refreshToken;
+    console.log("AUTH COOKIES:", {
+      accessToken: !!req.cookies?.accessToken,
+      refreshToken: !!req.cookies?.refreshToken,
+    });
+    // No tokens
+    if (!accessToken && !refreshToken) {
+      clearAuthCookies(res);
+
+      res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+
+      return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 1. Try access token first
+    |--------------------------------------------------------------------------
+    */
+
+    if (accessToken) {
+      try {
+        const decoded = jwt.verify(
+          accessToken,
+          process.env.ACCESS_TOKEN_SECRET!,
+        ) as {
+          userId: string;
+        };
+
+        const userId = decoded.userId;
+
+        if (!refreshToken) {
+          clearAuthCookies(res);
+
+          res.status(401).json({
+            success: false,
+            message: "Refresh token missing",
+          });
+
+          return;
+        }
+
+        // Check session
+        const session = await db
+          .select()
+          .from(userSession)
+          .where(
+            and(
+              eq(userSession.refreshToken, refreshToken),
+              eq(userSession.userId, userId),
+            ),
+          )
+          .limit(1);
+
+        const currentSession = session[0];
+
+        if (!currentSession) {
+          clearAuthCookies(res);
+
+          res.status(401).json({
+            success: false,
+            message: "Session not found",
+          });
+
+          return;
+        }
+
+        // Check session expiration
+        if (currentSession.expiresAt <= new Date()) {
+          await db
+            .delete(userSession)
+            .where(eq(userSession.refreshToken, refreshToken));
+
+          clearAuthCookies(res);
+
+          res.status(401).json({
+            success: false,
+            message: "Session expired. Please login again.",
+          });
+
+          return;
+        }
+
+        // Access token is valid
+        req.user = {
+          id: userId,
+          email: "",
+          role: "",
+        };
+
+        // Get user details
+        const users = await db
+          .select({
+            id: usersTable.id,
+            email: usersTable.email,
+            role: usersTable.role,
+          })
+          .from(usersTable)
+          .where(eq(usersTable.id, userId))
+          .limit(1);
+
+        const currentUser = users[0];
+
+        if (!currentUser) {
+          clearAuthCookies(res);
+
+          res.status(401).json({
+            success: false,
+            message: "User not found",
+          });
+
+          return;
+        }
+
+        if (!currentUser.role) {
+          clearAuthCookies(res);
+
+          res.status(401).json({
+            success: false,
+            message: "User role not defined",
+          });
+
+          return;
+        }
+
+        req.user = {
+          id: currentUser.id,
+          email: currentUser.email,
+          role: currentUser.role,
+        };
+
+        next();
+        return;
+      } catch (accessTokenError) {
+        // Access token expired/invalid.
+        // Continue to refresh-token flow below.
+        console.log("Access token invalid/expired");
+      }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2. Refresh token flow
+    |--------------------------------------------------------------------------
+    */
+
+    if (!refreshToken) {
+      clearAuthCookies(res);
+
+      res.status(401).json({
+        success: false,
+        message: "Refresh token missing",
+      });
+
+      return;
+    }
+
+    let decodedRefresh: {
+      userId: string;
+    };
+
+    try {
+      decodedRefresh = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET!,
+      ) as {
+        userId: string;
+      };
+    } catch {
+      clearAuthCookies(res);
+
+      res.status(401).json({
+        success: false,
+        message: "Invalid refresh token",
+      });
+
+      return;
+    }
+
+    const userId = decodedRefresh.userId;
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. Find refresh session
+    |--------------------------------------------------------------------------
+    */
+
+    console.log("USER ID FROM JWT:", userId);
+    console.log("REFRESH TOKEN FROM COOKIE:", refreshToken);
+
+    const session = await db
+      .select()
+      .from(userSession)
+      .where(
+        and(
+          eq(userSession.refreshToken, refreshToken),
+          eq(userSession.userId, userId),
+        ),
+      )
+      .limit(1);
+
+    console.log("SESSION:", session);
+
+    const currentSession = session[0];
+
+    if (!currentSession) {
+      clearAuthCookies(res);
+
+      res.status(401).json({
+        success: false,
+        message: "Session not found",
+      });
+
+      return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. Check session expiration
+    |--------------------------------------------------------------------------
+    */
+
+    if (currentSession.expiresAt <= new Date()) {
+      await db
+        .delete(userSession)
+        .where(eq(userSession.refreshToken, refreshToken));
+
+      clearAuthCookies(res);
+
+      res.status(401).json({
+        success: false,
+        message: "Session expired. Please login again.",
+      });
+
+      return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Get current user
+    |--------------------------------------------------------------------------
+    */
+
+    const users = await db
+      .select({
+        id: usersTable.id,
+        email: usersTable.email,
+        role: usersTable.role,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .limit(1);
+
+    const currentUser = users[0];
+
+    if (!currentUser) {
+      await db
+        .delete(userSession)
+        .where(eq(userSession.refreshToken, refreshToken));
+
+      clearAuthCookies(res);
+
+      res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+
+      return;
+    }
+
+    if (!currentUser.role) {
+      clearAuthCookies(res);
+
+      res.status(401).json({
+        success: false,
+        message: "User role not defined",
+      });
+
+      return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 6. Generate new access token
+    |--------------------------------------------------------------------------
+    */
+
+    const newAccessToken = Tokens.accessToken(currentUser);
+
+    /*
+    |--------------------------------------------------------------------------
+    | 7. Set new access token cookie
+    |--------------------------------------------------------------------------
+    */
+
+    const isProduction = process.env.NODE_ENV === "production";
+
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 15 * 60 * 1000,
+      path: "/",
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | 8. Attach user to request
+    |--------------------------------------------------------------------------
+    */
+
+    req.user = {
+      id: currentUser.id,
+      email: currentUser.email,
+      role: currentUser.role,
+    };
+
+    next();
+  } catch (error) {
+    console.error("AUTH MIDDLEWARE ERROR:", error);
+
+    clearAuthCookies(res);
+
+    res.status(401).json({
+      success: false,
+      message: "Authentication failed",
+    });
+  }
+};

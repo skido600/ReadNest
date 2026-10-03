@@ -8,6 +8,7 @@ import {
   searchByTitle,
   readBook,
   getSingleBook,
+  downloadBook,
   getReadHistory,
   getUserPoints,
   depositPoints,
@@ -24,7 +25,8 @@ bookroute.post("/deposit", authMiddleware, authorize("user"), depositPoints);
 bookroute.get("/history", authMiddleware, authorize("user"), getReadHistory);
 bookroute.get("/title", authMiddleware, authorize("user"), searchByTitle);
 bookroute.get("/read/:bookId", authMiddleware, authorize("user"), readBook);
-bookroute.get("/read/:bookId", authMiddleware, authorize("user"), readBook);
+
 bookroute.get("/me", authMiddleware, getMe);
+bookroute.get("/download/:bookId", authMiddleware, downloadBook);
 bookroute.get("/featured", getFeaturedBooks);
 export default bookroute;

@@ -14,8 +14,10 @@ import { PDFDocument } from "pdf-lib";
 import { uploadTocloudinary } from "../utils/uploadTocloudinary.ts";
 import { eq } from "drizzle-orm";
 import { generateLandingCache } from "../utils/generateLandingCache.ts";
-import * as bookService from "../services/admin_service.ts";
 
+import { bookQueue } from "../utils/queues/bookQueue.ts";
+
+bookQueue;
 export async function uploadBook(
   req: any,
   res: Response,
@@ -24,12 +26,14 @@ export async function uploadBook(
   try {
     const bookFile = req.files?.book?.[0];
     const coverFile = req.files?.cover?.[0];
-    const { title, author, isFeatured, description, category } = req.body;
+    const { title, author, description, category } = req.body;
+
+    const isFeatured =
+      req.body.isFeatured === "true" || req.body.isFeatured === true;
 
     const { error } = validateupdates.validate({
       title,
       author,
-      isFeatured,
       description,
       category,
     });
@@ -38,11 +42,11 @@ export async function uploadBook(
         res,
         false,
         400,
-        error.details[0]?.message as string,
+        error.details[0]?.message || "Validation failed",
       );
     }
-    const wordCount = description.trim().split(/\s+/).length;
-    if (wordCount < 20) {
+
+    if (description.trim().split(/\s+/).length < 20) {
       return HandleResponse(
         res,
         false,
@@ -54,39 +58,43 @@ export async function uploadBook(
       return HandleResponse(res, false, 400, "Book and cover required");
     }
 
-    const pdfBuffer = fs.readFileSync(bookFile.path);
-
-    const pdfDoc = await PDFDocument.load(pdfBuffer);
-    const pageCount = pdfDoc.getPageCount();
-    // Get number of pages
-
-    //  Upload PDF to Cloudinary
-    const bookUpload = await uploadTocloudinary.uploadBook(bookFile.path);
-
-    //  Upload cover image to Cloudinary
-    const coverUpload = await uploadTocloudinary.uploadCoverBook(
-      coverFile.path,
+    // Insert row right away so the user has an ID to track
+    const [book] = await db
+      .insert(booksTable)
+      .values({
+        title,
+        author,
+        description,
+        isFeatured,
+        userId: req.user.id,
+        category,
+        status: "processing",
+      })
+      .returning({ id: booksTable.id });
+    if (!book) {
+      return HandleResponse(res, false, 500, "Failed to create book record");
+    }
+    await bookQueue.add(
+      "process-book",
+      {
+        bookId: book.id,
+        bookPath: bookFile.path,
+        coverPath: coverFile.path,
+      },
+      {
+        attempts: 3,
+        backoff: { type: "exponential", delay: 5000 },
+        removeOnComplete: true,
+        removeOnFail: 100,
+      },
     );
-    // Save to database
-    await db.insert(booksTable).values({
-      title,
-      author,
-      description,
-      isFeatured,
-      userId: req.user.id,
-      category,
-      filePath: bookUpload.url,
-      filePublicId: bookUpload.publicId,
-      coverphoto: coverUpload.url,
-      coverPublicId: coverUpload.publicId,
-      pageCount,
-    });
-    // await generateLandingCache();
-    // 4 Delete local files
-    fs.unlinkSync(bookFile.path);
-    fs.unlinkSync(coverFile.path);
 
-    return HandleResponse(res, true, 201, "Book uploaded successfully");
+    return HandleResponse(
+      res,
+      true,
+      202,
+      "Book received and is being processed",
+    );
   } catch (err) {
     next(err);
   }
@@ -169,8 +177,8 @@ export async function deleteBook(
       return HandleResponse(res, false, 404, "Book not found");
     }
 
-    await uploadTocloudinary.deleteFile(book.filePublicId);
-    await uploadTocloudinary.deleteFile(book.coverPublicId);
+    await uploadTocloudinary.deleteFile(book.filePublicId as string);
+    await uploadTocloudinary.deleteFile(book.coverPublicId as string);
 
     await db.delete(booksTable).where(eq(booksTable.id, id));
 
@@ -207,7 +215,7 @@ export async function updateBookFile(
     const pdfDoc = await PDFDocument.load(pdfBuffer);
 
     // delete old PDF from cloudinary
-    await uploadTocloudinary.deleteFile(existingBook.filePublicId);
+    await uploadTocloudinary.deleteFile(existingBook.filePublicId as string);
 
     // upload new PDF
     const newBook = await uploadTocloudinary.uploadBook(bookFile.path);
@@ -253,7 +261,7 @@ export async function updateBookCover(
     if (!existingBook) return HandleResponse(res, false, 404, "Book not found");
 
     // delete old cover from cloudinary
-    await uploadTocloudinary.deleteFile(existingBook.coverPublicId);
+    await uploadTocloudinary.deleteFile(existingBook.coverPublicId as string);
 
     // upload new cover
     const newCover = await uploadTocloudinary.uploadCoverBook(coverFile.path);

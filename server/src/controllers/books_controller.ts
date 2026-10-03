@@ -22,7 +22,9 @@ export async function getFeaturedBooks(
     const books = await db
       .select()
       .from(booksTable)
-      .where(eq(booksTable.isFeatured, true))
+      .where(
+        and(eq(booksTable.isFeatured, true), eq(booksTable.status, "ready")),
+      )
       .orderBy(desc(booksTable.createdAt));
 
     return HandleResponse(res, true, 200, "featured Book", books);
@@ -127,6 +129,7 @@ export async function getLatestBooks(
         pageCount: booksTable.pageCount,
       })
       .from(booksTable)
+      .where(eq(booksTable.status, "ready"))
       .orderBy(desc(booksTable.createdAt))
       .limit(10);
     return HandleResponse(res, true, 200, "books found", books);
@@ -153,7 +156,7 @@ export async function getBooks(
               ilike(booksTable.title, `%${search}%`),
               ilike(booksTable.category, `%${search}%`),
             )
-          : undefined,
+          : eq(booksTable.status, "ready"),
       );
 
     if (!books || books.length === 0) {
@@ -187,7 +190,9 @@ export async function searchByTitle(
     const books = await db
       .select()
       .from(booksTable)
-      .where(ilike(booksTable.title, `%${q}%`))
+      .where(
+        and(eq(booksTable.status, "ready"), ilike(booksTable.title, `%${q}%`)),
+      )
       .limit(20);
 
     return HandleResponse(res, true, 200, books);
@@ -213,7 +218,7 @@ export async function readBook(
           filePath: booksTable.filePath,
         })
         .from(booksTable)
-        .where(eq(booksTable.id, bookId))
+        .where(and(eq(booksTable.id, bookId), eq(booksTable.status, "ready")))
         .limit(1),
 
       db
@@ -314,7 +319,7 @@ export async function getSingleBook(
     const books = await db
       .select()
       .from(booksTable)
-      .where(eq(booksTable.id, bookId))
+      .where(and(eq(booksTable.id, bookId), eq(booksTable.status, "ready")))
       .limit(1);
 
     const book = books[0];
@@ -383,7 +388,7 @@ export async function depositPoints(
 export async function getMe(req: any, res: Response, next: NextFunction) {
   try {
     const userId = req.user.id;
-
+    console.log("from me", userId);
     const [user] = await db
       .select({
         id: usersTable.id,
@@ -402,5 +407,78 @@ export async function getMe(req: any, res: Response, next: NextFunction) {
     return HandleResponse(res, true, 200, "User fetched successfully", user);
   } catch (err) {
     next(err);
+  }
+}
+
+export async function downloadBook(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { bookId } = req.params;
+
+    if (!bookId) {
+      return HandleResponse(res, false, 400, "Book id is required");
+    }
+
+    const books = await db
+      .select({
+        id: booksTable.id,
+        title: booksTable.title,
+        filePath: booksTable.filePath,
+      })
+      .from(booksTable)
+      .where(eq(booksTable.id, bookId))
+      .limit(1);
+
+    const book = books[0];
+
+    if (!book) {
+      return HandleResponse(res, false, 404, "Book not found");
+    }
+
+    if (!book.filePath) {
+      return HandleResponse(res, false, 404, "Book PDF not found");
+    }
+
+    // Fetch PDF from Cloudinary
+    const response = await fetch(book.filePath);
+
+    if (!response.ok || !response.body) {
+      return HandleResponse(res, false, 500, "Failed to fetch book PDF");
+    }
+
+    const filename = `${book.title || "book"}`
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+      .trim();
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${filename}.pdf"`,
+    );
+
+    res.setHeader("Content-Type", "application/pdf");
+    const contentLength = response.headers.get("content-length");
+
+    if (contentLength) {
+      res.setHeader("Content-Length", contentLength);
+    }
+
+    // Convert Web ReadableStream → Node response
+    const reader = response.body.getReader();
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      res.write(Buffer.from(value));
+    }
+
+    res.end();
+  } catch (error) {
+    console.error("Download book error:", error);
+    next(error);
   }
 }

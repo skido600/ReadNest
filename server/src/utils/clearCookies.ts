@@ -1,13 +1,6 @@
-export const clearAuthCookies = (res: any) => {
-  res.clearCookie("accessToken", {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
-  });
-
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
-  });
+import { clearCookieOptions } from "./cookieOptions";
+import type { Response } from "express";
+export const clearAuthCookies = (res: Response) => {
+  res.clearCookie("accessToken", clearCookieOptions);
+  res.clearCookie("refreshToken", clearCookieOptions);
 };

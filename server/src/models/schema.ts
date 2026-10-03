@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   integer,
+  pgEnum,
   boolean,
 } from "drizzle-orm/pg-core";
 
@@ -57,27 +58,36 @@ export const userSession = pgTable("user_sessions", {
   userId: uuid("user_id")
     .notNull()
     .references(() => usersTable.id, { onDelete: "cascade" }),
-  accessToken: text().notNull().unique(),
-  refreshToken: text().notNull().unique(),
-  ip_address: text("ip_address"),
-  lastSeen: timestamp("last_seen").defaultNow(),
+  refreshToken: text("refresh_token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  lastSeen: timestamp("last_seen").defaultNow().notNull(), // <-- new
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+export const bookStatusEnum = pgEnum("book_status", [
+  "processing",
+  "ready",
+  "failed",
+]);
 
 // Books table
 export const booksTable = pgTable("books", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: text().notNull(),
   author: text().notNull(),
-  filePath: text().notNull(),
   description: text().notNull(),
   userId: uuid("user_id")
     .notNull()
     .references(() => usersTable.id, { onDelete: "cascade" }),
   category: text("category").default("Thriller").notNull(),
   isFeatured: boolean("is_featured").notNull().default(false),
-  filePublicId: text().notNull(),
-  coverphoto: text().notNull(),
-  coverPublicId: text().notNull(),
+
+  // Filled in later by the worker, so they must be nullable
+  filePath: text(),
+  filePublicId: text(),
+  coverphoto: text(),
+  coverPublicId: text(),
+
+  status: bookStatusEnum("status").notNull().default("ready"),
   pageCount: integer("page_count"),
   createdAt: timestamp("created_at").defaultNow(),
 });

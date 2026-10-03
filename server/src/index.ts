@@ -5,20 +5,23 @@ import authroute from "./routes/user_routes.ts";
 import { initalizeEmailWorker } from "./utils/Mail_worker.ts";
 import cookieParser from "cookie-parser";
 import adminrouter from "./routes/admin_routes.ts";
-
+import morgan from "morgan";
 import cors from "cors";
 import bookroute from "./routes/books_routes.ts";
 import profile from "./routes/profile_routes.ts";
+import { uploadWorker } from "./utils/queues/bookQueue.ts";
 
 config();
 const port = process.env.PORT;
 
 const app = express();
+app.use(morgan(":method :url :status - :response-time ms"));
 app.use(cookieParser());
 app.use(
   cors({
     origin: ["http://localhost:3000", "https://read-nest-431c.vercel.app"],
     credentials: true,
+    exposedHeaders: ["Content-Disposition"],
   }),
 );
 //middlewares
@@ -35,12 +38,13 @@ app.use("/api/profile", profile);
 app.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "server is active 😍",
+    message: "server is active ",
   });
 });
 app.use(HandleError);
 app.use(notFound);
 app.listen(port, async () => {
-  console.log(`Server running on port ${port}`);
   initalizeEmailWorker();
+  uploadWorker();
+  console.log(`Server running on port ${port}`);
 });

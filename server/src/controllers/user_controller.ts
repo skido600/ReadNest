@@ -1,13 +1,9 @@
-import {
-  type Request,
-  type Response,
-  type NextFunction,
-  response,
-} from "express";
+import { type Request, type Response, type NextFunction } from "express";
 
 import { userSession } from "../models/schema.ts";
 import { db } from "../configs/dbconnection.ts";
 import { HandleResponse } from "../utils/HandleResponse.ts";
+
 import {
   registerUser,
   VerifyEmailService,
@@ -16,18 +12,22 @@ import {
   verifyCodeService,
   resetPasswordService,
 } from "../services/auth_service.ts";
+
 import { eq } from "drizzle-orm";
 import { clearAuthCookies } from "../utils/clearCookies.ts";
+import { refreshCookie, accessCookie } from "../utils/cookieOptions.ts";
 
-//regiter
+// register
 export async function Signup(
   req: any,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
   try {
-    const { user_name, email, password }: any = req.body;
+    const { user_name, email, password } = req.body;
+
     await registerUser(user_name, email, password);
+
     HandleResponse(
       res,
       true,
@@ -38,23 +38,24 @@ export async function Signup(
     if (error instanceof Error) {
       if (error.message === "User already exists") {
         return HandleResponse(res, false, 409, error.message);
-      } else {
-        next(error);
       }
+
+      next(error);
     }
   }
 }
 
-//verifyemail
+// verify email
 export async function VerifyEmail(
   req: Request,
   res: Response,
   next: NextFunction,
-) {
+): Promise<void> {
   try {
     const { email, code } = req.body;
 
     await VerifyEmailService(email, code);
+
     return HandleResponse(res, true, 200, "Email verified successfully");
   } catch (error) {
     if (error instanceof Error) {
@@ -82,45 +83,45 @@ export async function VerifyEmail(
             error.message || "Something went wrong",
           );
       }
-    } else {
-      next(error);
     }
+
+    next(error);
   }
 }
 
-//login
-export async function Login(req: Request, res: Response, next: NextFunction) {
+// login
+export async function Login(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { email, password } = req.body;
-    const userIP = req.ip;
+
     const response = await LoginService(email, password);
+
+    // Create 7-day server-side session
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
     await db.insert(userSession).values({
       userId: response.user.id,
-      accessToken: response.accessToken,
       refreshToken: response.refreshToken,
-      ip_address: userIP || "unknown",
-      lastSeen: new Date(),
-    });
-    res.cookie("refreshToken", response.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      expiresAt,
     });
 
-    res.cookie("accessToken", response.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 15 * 60 * 1000,
-    });
+    const isProduction = process.env.NODE_ENV === "production";
+
+    // Refresh token cookie
+    res.cookie("refreshToken", response.refreshToken, refreshCookie);
+    res.cookie("accessToken", response.accessToken, accessCookie);
     const user = {
       user_id: response.user.id,
       email: response.user.email,
       user_name: response.user.user_name,
       role: response.user.role,
     };
-    HandleResponse(res, true, 200, "Login successful", {
+
+    return HandleResponse(res, true, 200, "Login successful", {
       ...user,
     });
   } catch (error) {
@@ -146,13 +147,13 @@ export async function Login(req: Request, res: Response, next: NextFunction) {
             error.message || "Something went wrong",
           );
       }
-    } else {
-      next(error);
     }
+
+    next(error);
   }
 }
 
-//forget password
+// forgot password
 export const forgotPassword = async (
   req: Request,
   res: Response,
@@ -160,6 +161,7 @@ export const forgotPassword = async (
 ): Promise<void> => {
   try {
     const { email } = req.body;
+
     const forgetpasswordres = await forgotPasswordService(email);
 
     return HandleResponse(
@@ -173,13 +175,14 @@ export const forgotPassword = async (
     if (error instanceof Error) {
       if (error.message === "User not found invalid email or username") {
         return HandleResponse(res, false, 400, error.message);
-      } else {
-        next(error);
       }
+
+      next(error);
     }
   }
 };
-//  verifyCode
+
+// verify code
 export const verifyCode = async (
   req: Request,
   res: Response,
@@ -187,40 +190,47 @@ export const verifyCode = async (
 ): Promise<void> => {
   try {
     const { email, code } = req.body;
+
     const { forgetpasswordToken } = await verifyCodeService(email, code);
 
     return HandleResponse(
       res,
       true,
       200,
-      "Code verified sucessfully",
+      "Code verified successfully",
       forgetpasswordToken,
     );
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === "User not found") {
         return HandleResponse(res, false, 404, error.message);
-      } else if (error.message === "OTP expiry not set") {
-        return HandleResponse(res, false, 400, error.message);
-      } else if (error.message === "OTP expired") {
-        return HandleResponse(res, false, 410, error.message);
-      } else if (error.message === "Invalid verification code") {
-        return HandleResponse(res, false, 400, error.message);
-      } else {
-        next(error);
       }
+
+      if (error.message === "OTP expiry not set") {
+        return HandleResponse(res, false, 400, error.message);
+      }
+
+      if (error.message === "OTP expired") {
+        return HandleResponse(res, false, 410, error.message);
+      }
+
+      if (error.message === "Invalid verification code") {
+        return HandleResponse(res, false, 400, error.message);
+      }
+
+      next(error);
     }
   }
 };
 
-//reset password
+// reset password
 export const resetPassword = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { resetToken, newPassword, confirmNewpassword }: any = req.body;
+    const { resetToken, newPassword, confirmNewpassword } = req.body;
 
     await resetPasswordService(resetToken, newPassword, confirmNewpassword);
 
@@ -229,34 +239,40 @@ export const resetPassword = async (
     if (error instanceof Error) {
       if (error.message === "Passwords do not match") {
         return HandleResponse(res, false, 400, error.message);
-      } else if (error.message === "User not found") {
-        return HandleResponse(res, false, 404, error.message);
-      } else if (error.message === "Invalid or expired reset token") {
-        return HandleResponse(res, false, 400, error.message);
-      } else if (error.message === "Reset token expired") {
-        return HandleResponse(res, false, 400, error.message);
-      } else {
-        next(error);
       }
+
+      if (error.message === "User not found") {
+        return HandleResponse(res, false, 404, error.message);
+      }
+
+      if (error.message === "Invalid or expired reset token") {
+        return HandleResponse(res, false, 400, error.message);
+      }
+
+      if (error.message === "Reset token expired") {
+        return HandleResponse(res, false, 400, error.message);
+      }
+
+      next(error);
     }
   }
 };
 
+// logout
 export const Logout = async (
-  req: Request,
+  req: any,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
     const refreshToken = req.cookies?.refreshToken;
 
-    // OPTIONAL: remove session from DB
     if (refreshToken) {
       await db
         .delete(userSession)
         .where(eq(userSession.refreshToken, refreshToken));
     }
-    // Clear cookies (must match cookie options)
+
     clearAuthCookies(res);
 
     return HandleResponse(res, true, 200, "Logged out successfully");

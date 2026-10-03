@@ -2,139 +2,125 @@ import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { db } from "../configs/dbconnection.ts";
 import { userSession, usersTable } from "../models/schema.ts";
-import { eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import { clearAuthCookies } from "../utils/clearCookies.ts";
 import Tokens from "../utils/JWT_helper.ts";
+import {
+  accessCookie,
+  refreshCookie,
+  REFRESH_MAX_AGE,
+} from "../utils/cookieOptions.ts";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
 
 export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-  };
+  user?: { id: string; email: string; role: string };
 }
+
+const deny = (res: Response, message: string, clear = true) => {
+  if (clear) clearAuthCookies(res);
+  return res.status(401).json({ success: false, message });
+};
 
 export const authMiddleware = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
-  const accessToken = req.cookies?.accessToken;
-  const refreshToken = req.cookies?.refreshToken;
+  const accessToken: string | undefined = req.cookies?.accessToken;
+  const refreshToken: string | undefined = req.cookies?.refreshToken;
 
-  // No access token
   if (!accessToken && !refreshToken) {
-    clearAuthCookies(res);
-    return res.status(401).json({
-      success: false,
-      message: "Not authenticated",
-    });
+    return deny(res, "Not authenticated");
+  }
+
+  // 1. Try the access token first
+  if (accessToken) {
+    try {
+      const decoded = jwt.verify(accessToken, ACCESS_TOKEN_SECRET, {
+        algorithms: ["HS256"],
+      }) as { id: string; email: string; role: string };
+
+      req.user = { id: decoded.id, email: decoded.email, role: decoded.role };
+      return next();
+    } catch (err: any) {
+      // Anything other than "expired" is a bad/tampered token
+      if (err.name !== "TokenExpiredError") {
+        return deny(res, "Invalid access token", false);
+      }
+      // expired -> fall through to refresh flow
+    }
+  }
+
+  // 2. Refresh flow (access token expired OR cookie already dropped by the browser)
+  if (!refreshToken) {
+    return deny(res, "Session expired, please login again");
   }
 
   try {
-    //  Verify access token
-    if (accessToken) {
-      const decoded = jwt.verify(accessToken, ACCESS_TOKEN_SECRET) as any;
+    const payload = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, {
+      algorithms: ["HS256"],
+    }) as { id: string };
 
-      req.user = decoded;
-      return next();
-    }
-  } catch (err: any) {
-    //  Access token expired → try refresh token
-    if (err.name !== "TokenExpiredError") {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid access token" });
-    }
+    // Session must exist, match this token, and not be expired
+    const [session] = await db
+      .select()
+      .from(userSession)
+      .where(
+        and(
+          eq(userSession.refreshToken, refreshToken),
+          eq(userSession.userId, payload.id),
+          gt(userSession.expiresAt, new Date()),
+        ),
+      )
+      .limit(1);
 
-    // No refresh token → logout
-    if (!refreshToken) {
-      clearAuthCookies(res);
-      return res.status(401).json({
-        success: false,
-        message: "Session expired, please login again",
-      });
-    }
+    if (!session) return deny(res, "Session invalid");
 
-    try {
-      //  Verify refresh token
-      const refreshPayload = jwt.verify(
-        refreshToken,
-        REFRESH_TOKEN_SECRET,
-      ) as any;
-      //  Validate session in DB
-      const session = await db
-        .select()
-        .from(userSession)
-        .where(eq(userSession.refreshToken, refreshToken));
+    const [currentUser] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, payload.id))
+      .limit(1);
 
-      if (!session.length) {
-        clearAuthCookies(res);
-        return res
-          .status(401)
-          .json({ success: false, message: "Session invalid" });
-      }
-      // Get user from DB
-      const user = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.id, refreshPayload.id));
+    if (!currentUser) return deny(res, "User not found, login again");
+    if (!currentUser.role) return deny(res, "User role not defined");
 
-      if (!user.length) {
-        clearAuthCookies(res);
-        return res
-          .status(401)
-          .json({ success: false, message: "User not found, login again" });
-      }
+    const newAccessToken = Tokens.accessToken(currentUser);
+    const newRefreshToken = Tokens.refreshToken(currentUser);
 
-      const currentUser = user[0];
-      if (!currentUser) {
-        throw new Error("User not found");
-      }
+    // Rotate ONLY this session, and only if the old token is still current.
+    // The WHERE on the old token makes rotation atomic: if two requests race,
+    // only one wins and the other gets zero rows back.
+    const rotated = await db
+      .update(userSession)
+      .set({
+        refreshToken: newRefreshToken,
+        lastSeen: new Date(),
+        expiresAt: new Date(Date.now() + REFRESH_MAX_AGE),
+      })
+      .where(
+        and(
+          eq(userSession.id, session.id),
+          eq(userSession.refreshToken, refreshToken),
+        ),
+      )
+      .returning({ id: userSession.id });
 
-      //  Generate NEW access token
-      const newAccessToken = Tokens.accessToken(currentUser);
-      const newRefreshToken = Tokens.refreshToken(currentUser);
-      await db
-        .update(userSession)
-        .set({
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
-          lastSeen: new Date(),
-        })
-        .where(eq(userSession.userId, currentUser.id));
-      //  Set new access token cookie
-      res.cookie("accessToken", newAccessToken, {
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 15 * 60 * 1000, // 15 mins
-      });
-      res.cookie("refreshToken", newRefreshToken, {
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-      //  Attach user and continue
-      if (!currentUser.role) {
-        throw new Error("User role not defined");
-      }
-      req.user = {
-        id: currentUser.id,
-        email: currentUser.email,
-        role: currentUser.role,
-      };
-      return next();
-    } catch {
-      //  Refresh token expired or invalid → logout
-      clearAuthCookies(res);
-      return res.status(401).json({
-        message: "Session expired, please login again",
-      });
-    }
+    if (!rotated.length) return deny(res, "Session invalid");
+
+    res.cookie("accessToken", newAccessToken, accessCookie);
+    res.cookie("refreshToken", newRefreshToken, refreshCookie);
+
+    req.user = {
+      id: currentUser.id,
+      email: currentUser.email,
+      role: currentUser.role,
+    };
+    return next();
+  } catch (err) {
+    console.error("Auth refresh failed:", err);
+    return deny(res, "Session expired, please login again");
   }
 };

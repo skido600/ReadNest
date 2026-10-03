@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { FiHome, FiCompass, FiHeart, FiLogOut } from "react-icons/fi";
 import { BanknoteArrowUp, Shield } from "lucide-react";
 
@@ -14,7 +14,7 @@ function Usersidebar() {
   const { isOpen, close } = useSidebar();
   const router = useRouter();
   const { user } = useUser();
-
+  const pathname = usePathname();
   // Lock page scrolling when sidebar is open
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
@@ -23,7 +23,14 @@ function Usersidebar() {
       document.body.style.overflow = "";
     };
   }, [isOpen]);
+  // useEffect(() => {
+  //   const isBookReader =
+  //     pathname.startsWith("/dashboard/") && pathname.split("/").length === 3;
 
+  //   if (isBookReader) {
+  //     close();
+  //   }
+  // }, [pathname, close]);
   if (!user) return null;
 
   const userMenu = [

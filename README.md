@@ -1,199 +1,203 @@
 # ReadNest
 
-A modern digital reading platform where users discover, unlock, and read books online using a point‑based access system.
+A comprehensive platform for discovering, unlocking, and enjoying digital books.
 
 ## Overview
 
-ReadNest is an online reading platform that makes it easy to explore, unlock, and read books directly in your browser. Users earn points and spend them to open books they’re interested in, while administrators can upload and manage an entire digital library. It’s designed from the ground up to feel fast, responsive, and intuitive — whether you’re browsing the latest releases, searching for a specific title, or diving into an administrative dashboard.
-
----
+ReadNest helps users discover and read digital books through a straightforward point-based system. It takes the hassle out of digital library management by giving administrators the tools to upload and organize content while providing readers an intuitive platform to track their reading history and unlock new titles. The system handles everything from automated email verification to seamless PDF processing, allowing teams to focus on delivering great reading experiences without worrying about the underlying infrastructure.
 
 ## System Architecture
 
 ```mermaid
 flowchart LR
-    Client["Web Client (Next.js)"]
-    API["Express API Server"]
-    Postgres[("PostgreSQL")]
-    Redis[("Redis")]
-    Cloudinary["Cloudinary (Asset Storage)"]
-    EmailQueue["BullMQ (Email Queue)"]
-    EmailService["Nodemailer (Email Sending)"]
+  Client["Web Client (Next.js)"]
+  API["Express API Server"]
+  Database[("PostgreSQL Database")]
+  Cache[("Redis Cache")]
+  CDN["Cloudinary Storage"]
+  Worker["BullMQ Worker"]
 
-    Client --> API
-    API --> Postgres
-    API --> Redis
-    API --> Cloudinary
-    API --> EmailQueue
-    EmailQueue --> EmailService
+  Client -- "HTTP / REST" --> API
+  API -- "Queries" --> Database
+  API -- "Jobs & Sessions" --> Cache
+  API -- "Media Uploads" --> CDN
+  Cache -- "Consume Jobs" --> Worker
 
-    style Client fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#fff
-    style API fill:#2e1065,stroke:#8b5cf6,stroke-width:2px,color:#fff
-    style Postgres fill:#0f172a,stroke:#3b82f6,stroke-width:2px,color:#fff
-    style Redis fill:#4c0519,stroke:#ef4444,stroke-width:2px,color:#fff
-    style Cloudinary fill:#1e3a5f,stroke:#0ea5e9,stroke-width:2px,color:#fff
-    style EmailQueue fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fff
-    style EmailService fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fff
+  style Client fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#fff
+  style API fill:#2e1065,stroke:#8b5cf6,stroke-width:2px,color:#fff
+  style Database fill:#0f172a,stroke:#3b82f6,stroke-width:2px,color:#fff
+  style Cache fill:#4c0519,stroke:#ef4444,stroke-width:2px,color:#fff
+  style CDN fill:#022c22,stroke:#10b981,stroke-width:2px,color:#fff
+  style Worker fill:#451a03,stroke:#f59e0b,stroke-width:2px,color:#fff
 ```
-
----
 
 ## Features
 
-### User Authentication & Security
+### Authentication and Security
 
-Secure registration with email verification, login with automatic session refresh, forgot‑password flow, and account lockout after repeated failures. Sessions are managed via HTTP‑only JWT cookies.
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Client as Next.js App
-    participant Server as Express API
-    participant DB as PostgreSQL
-
-    User->>Client: Fill signup form (name, email, password)
-    Client->>Server: POST /api/authv1/signup
-    Server->>DB: Insert user with hashed password & generate OTP
-    Server-->>Client: Success + send OTP via BullMQ email queue
-    Client->>User: Ask to verify email (OTP modal)
-    User->>Client: Enter 6‑digit OTP
-    Client->>Server: POST /api/authv1/verifyemail
-    Server->>DB: Verify hashed OTP, mark user as verified
-    Server-->>Client: Verification successful
-
-    User->>Client: Fill login form (email, password)
-    Client->>Server: POST /api/authv1/login
-    Server->>DB: Validate credentials, check account lock state
-    Server-->>Client: Set HttpOnly access & refresh cookies, return profile
-```
-
-### Points‑Based Book Unlocking
-
-Every user receives a welcome bonus. Unlocking a book costs 1 point per 10 pages. Once unlocked, the page stays available. The platform keeps track of your reading history and point balance in real time.
+ReadNest secures user accounts through a robust authentication flow. Users register with an email and password, receiving a one-time password via email for verification. The system implements HTTP-only cookies, automatic session refreshing, and account locking mechanisms to prevent unauthorized access.
 
 ```mermaid
 sequenceDiagram
-    actor User
-    participant Client as Next.js App
-    participant Server as Express API
-    participant DB as PostgreSQL
+  actor NewUser
+  participant WebClient as "Frontend Client"
+  participant APIServer as "Backend API"
+  participant DB as "PostgreSQL"
 
-    User->>Client: Click on a book
-    Client->>Server: GET /api/book/read/:bookId (with cookies)
-    Server->>DB: Check if user already read it (history table)
-    alt Already read
-        DB-->>Server: History record found
-        Server-->>Client: Return filePath directly
-    else Not read yet
-        Server->>DB: Calculate required points (pages / 10)
-        Server->>DB: Query current point balance
-        alt Insufficient points
-            Server-->>Client: 403 with code INSUFFICIENT_POINTS
-            Client-->>User: Show “Not enough points” message
-        else Sufficient points
-            Server->>DB: Insert a “spend” record in points table
-            Server->>DB: Insert history record
-            Server-->>Client: Return unlocked filePath
-        end
-    end
+  NewUser->>WebClient: Submit registration details
+  WebClient->>APIServer: POST /api/authv1/signup
+  APIServer->>DB: Save user and generate OTP
+  APIServer-->>WebClient: Return success status
+  WebClient->>NewUser: Prompt for OTP
+  NewUser->>WebClient: Enter 6-digit OTP
+  WebClient->>APIServer: POST /api/authv1/verifyemail
+  APIServer->>DB: Mark user as verified
+  APIServer-->>WebClient: Verification complete
 ```
 
-### Admin Book Management
+### Point-Based Book Access
 
-Admins can upload new books (PDF + cover image), edit metadata, replace the book file or cover, and delete entries. All uploads are stored securely in Cloudinary.
+The platform operates on a dynamic point system where books cost points based on their total page count. Users receive a sign-up bonus and can manually deposit points. Once a user decides to read a book, the system verifies their balance, deducts the necessary points, and records the title in their reading history for unlimited future access.
 
 ```mermaid
 sequenceDiagram
-    actor Admin
-    participant Client as Admin Dashboard
-    participant Server as Express API
-    participant Cloudinary as Cloudinary CDN
-    participant DB as PostgreSQL
+  actor Reader
+  participant WebClient as "Frontend Client"
+  participant APIServer as "Backend API"
+  participant DB as "PostgreSQL"
 
-    Admin->>Client: Fill book form + pick PDF & cover
-    Client->>Server: POST /api/admin/upload (multipart form data)
-    Server->>Server: Validate text fields & description word count
-    Server->>Server: Extract PDF page count
-    Server->>Cloudinary: Upload PDF (raw), upload cover (image)
-    Cloudinary-->>Server: Return secure URLs & public IDs
-    Server->>DB: Insert book record with file paths, page count
-    Server-->>Client: Success message
-
-    Admin->>Client: Click edit on a book entry
-    Client->>Server: PUT /api/admin/editbook/:id (text fields)
-    Server->>DB: Update book metadata
-    Server-->>Client: Book updated
+  Reader->>WebClient: Click to read a book
+  WebClient->>APIServer: GET /api/book/read/:bookId
+  APIServer->>DB: Check if previously read
+  DB-->>APIServer: Return reading history status
+  APIServer->>DB: Verify point balance
+  APIServer->>DB: Deduct points and save history
+  APIServer-->>WebClient: Return unlocked PDF URL
 ```
 
-### Additional Capabilities
+### Administrative Library Management
 
-- **Discovery & Search** — Browse by category (Thriller, Horror, etc.), search by title or category, and view featured books.
-- **Reading History** — Revisit any book you’ve unlocked; filtered by search if needed.
-- **Points Deposit** — Users can top up their points (max 5000 per deposit) directly from the sidebar.
-- **Dark / Light Mode** — Full theme support with a toggle.
-- **Responsive Layout** — Works on desktops, tablets, and mobile devices.
-- **Automated Emails** — OTP verification, password reset codes, and contact form submissions are delivered via BullMQ‑powered email workers.
+Administrators maintain full control over the digital library. The platform provides an interface to upload new books along with cover images. Behind the scenes, the server calculates page counts, uploads media files to secure storage, and triggers background jobs to process the assets without blocking the user interface.
 
----
+## Installation
+
+Follow these steps to set up the project locally.
+
+Clone the Repository:
+
+```bash
+git clone https://github.com/skido600/ReadNest.git
+```
+
+Install Server Dependencies:
+
+```bash
+cd ReadNest/server
+npm install
+```
+
+Configure Server Environment Variables:
+
+```bash
+PORT=5000
+DATABASE_URL=your_neon_postgres_url
+ACCESS_TOKEN_SECRET=your_access_secret
+REFRESH_TOKEN_SECRET=your_refresh_secret
+HMAC_VERIFICATION_CODE_SECRET=your_hmac_secret
+FORGETPASSWORD_SEC=your_forgot_secret
+EMAIL_USER=your_smtp_email
+EMAIL_PASSWORD=your_smtp_password
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_key
+CLOUDINARY_API_SECRET=your_cloudinary_secret
+```
+
+Push Database Migrations:
+
+```bash
+npm run build
+npx drizzle-kit push
+```
+
+Install Client Dependencies:
+
+```bash
+cd ../client
+npm install
+```
+
+Configure Client Environment Variables:
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+```
+
+## Usage
+
+Start the development servers for both the client and the API.
+
+Start the backend API and worker processes:
+
+```bash
+cd server
+npm run dev
+```
+
+Start the frontend Next.js application:
+
+```bash
+cd client
+npm run dev
+```
+
+Open `http://localhost:3000` in your browser. You can create a new account to receive the sign-up bonus points. Check your email for the verification OTP. Once logged in, browse the discovery feed to unlock and read books directly in your browser.
 
 ## Technologies Used
 
-| Category          | Technology                                                                                     |
-|-------------------|------------------------------------------------------------------------------------------------|
-| **Frontend**      | [Next.js](https://nextjs.org) (App Router), [React](https://react.dev) 19, [TypeScript](https://www.typescriptlang.org) |
-| **Styling**       | [Tailwind CSS](https://tailwindcss.com) v4, [Framer Motion](https://www.framer.com/motion/)    |
-| **State / Data**  | [TanStack Query](https://tanstack.com/query), [React Hook Form](https://react-hook-form.com) |
-| **UI Libraries**  | [Swiper](https://swiperjs.com), [Lucide React](https://lucide.dev), [React Icons](https://react-icons.github.io) |
-| **Backend**       | [Node.js](https://nodejs.org), [Express](https://expressjs.com), TypeScript                    |
-| **Database**      | [PostgreSQL](https://www.postgresql.org) + [Drizzle ORM](https://orm.drizzle.team)             |
-| **Caching / Queue** | [Redis](https://redis.io) (via ioredis), [BullMQ](https://docs.bullmq.io)                    |
-| **File Storage**  | [Cloudinary](https://cloudinary.com)                                                           |
-| **Authentication**| [Argon2](https://github.com/ranisalt/argon2), [JSON Web Tokens](https://jwt.io)               |
-| **Email**         | [Nodemailer](https://nodemailer.com)                                                           |
-| **Validation**    | [Joi](https://joi.dev)                                                                         |
-
----
+| Category | Technology |
+|---|---|
+| Frontend | [Next.js](https://nextjs.org), [React](https://react.dev), [Tailwind CSS](https://tailwindcss.com) |
+| Data Fetching | [TanStack Query](https://tanstack.com/query) |
+| PDF Viewer | [React-PDF](https://github.com/wojtekmaj/react-pdf) |
+| Backend | [Node.js](https://nodejs.org), [Express](https://expressjs.com) |
+| Database | [PostgreSQL](https://www.postgresql.org), [Drizzle ORM](https://orm.drizzle.team) |
+| Caching & Queues | [Redis](https://redis.io), [BullMQ](https://docs.bullmq.io) |
+| Authentication | [Argon2](https://github.com/ranisalt/argon2), [JSON Web Tokens](https://jwt.io) |
+| File Storage | [Cloudinary](https://cloudinary.com) |
 
 ## API Documentation
 
-All endpoints return a JSON body with the shape:
+The backend exposes the following RESTful API endpoints. All protected routes require a valid HTTP-only `accessToken` cookie.
 
-```json
-{
-  "success": true,
-  "statuscode": 200,
-  "message": "Description",
-  "data": {}
-}
-```
-
-**Authentication** — Protected routes require the `accessToken` cookie. If the access token is expired, the server will try to rotate it using the `refreshToken` cookie stored in the database. If both tokens are invalid, the user is logged out.
-
-### Auth Routes
+### Authentication Endpoints
 
 #### POST /api/authv1/signup
-**Description**: Register a new user. An OTP is sent to the provided email.
+**Description**: Registers a new user account and dispatches an OTP to the provided email address.
 
 **Request**:
 ```json
 {
   "user_name": "johndoe",
   "email": "john@example.com",
-  "password": "securePass123"
+  "password": "securepassword123"
 }
 ```
 
-**Response** (201):
+**Response**:
 ```json
-{ "success": true, "statuscode": 201, "message": "User registered successfully. Check your email for verification." }
+{
+  "success": true,
+  "statuscode": 201,
+  "message": "User registered successfully. Check your email for verification."
+}
 ```
 
-**Errors**: 409 if email already exists.
-
----
+**Errors**:
+- 400: Validation failed
+- 409: User already exists
 
 #### POST /api/authv1/verifyemail
-**Description**: Verify email using the OTP sent during signup.
+**Description**: Verifies a user's email address using the received OTP.
 
 **Request**:
 ```json
@@ -203,34 +207,41 @@ All endpoints return a JSON body with the shape:
 }
 ```
 
-**Response** (200):
+**Response**:
 ```json
-{ "success": true, "statuscode": 200, "message": "Email verified successfully" }
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "Email verified successfully"
+}
 ```
 
-**Errors**: 404 user not found, 409 already verified, 410 OTP expired, 401 invalid code.
-
----
+**Errors**:
+- 400: OTP expiry not set
+- 401: Invalid verification code
+- 404: User not found
+- 409: User already verified
+- 410: OTP expired
 
 #### POST /api/authv1/login
-**Description**: Authenticate user. Sets `accessToken` and `refreshToken` cookies.
+**Description**: Authenticates a user, issues access and refresh cookies, and returns the user profile.
 
 **Request**:
 ```json
 {
-  "email": "john@example.com or username",
-  "password": "securePass123"
+  "email": "john@example.com",
+  "password": "securepassword123"
 }
 ```
 
-**Response** (200):
+**Response**:
 ```json
 {
   "success": true,
   "statuscode": 200,
   "message": "Login successful",
   "data": {
-    "user_id": "uuid",
+    "user_id": "uuid-string",
     "email": "john@example.com",
     "user_name": "johndoe",
     "role": "user"
@@ -238,12 +249,13 @@ All endpoints return a JSON body with the shape:
 }
 ```
 
-**Errors**: 404 user not found, 403 if email not verified (sends new OTP), 400 invalid credentials, account locked after many failures.
-
----
+**Errors**:
+- 400: Invalid email or password
+- 403: Email not verified or account locked
+- 404: User not found
 
 #### POST /api/authv1/forget-password
-**Description**: Sends a reset OTP to the user’s email.
+**Description**: Initiates the password recovery process by sending an OTP to the user's email.
 
 **Request**:
 ```json
@@ -252,20 +264,18 @@ All endpoints return a JSON body with the shape:
 }
 ```
 
-**Response** (200):
+**Response**:
 ```json
 {
   "success": true,
   "statuscode": 200,
-  "message": "Password reset code sent...",
+  "message": "Password reset code sent to your email. the code will expire in the next 10mins",
   "data": "john@example.com"
 }
 ```
 
----
-
 #### POST /api/authv1/verifycode
-**Description**: Verifies the reset OTP and returns a one‑time `resetToken`.
+**Description**: Validates the password reset OTP and issues a temporary reset token.
 
 **Request**:
 ```json
@@ -275,65 +285,238 @@ All endpoints return a JSON body with the shape:
 }
 ```
 
-**Response** (200):
+**Response**:
 ```json
 {
   "success": true,
   "statuscode": 200,
   "message": "Code verified successfully",
-  "data": "jwt_reset_token"
+  "data": "jwt.reset.token"
 }
 ```
 
-**Errors**: 404 user not found, 410 OTP expired, 400 invalid code.
-
----
-
 #### PUT /api/authv1/resetpassword
-**Description**: Resets the password using the `resetToken` obtained from `verifycode`.
+**Description**: Updates the user's password using the temporary reset token.
 
 **Request**:
 ```json
 {
-  "resetToken": "jwt_reset_token",
-  "newPassword": "newSecurePass",
-  "confirmNewpassword": "newSecurePass"
+  "resetToken": "jwt.reset.token",
+  "newPassword": "newpassword123",
+  "confirmNewpassword": "newpassword123"
 }
 ```
 
-**Response** (200):
+**Response**:
 ```json
-{ "success": true, "statuscode": 200, "message": "Password reset successful" }
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "Password reset successful"
+}
 ```
-
-**Errors**: 400 passwords don’t match, 400 invalid/expired token.
-
----
 
 #### GET /api/authv1/logout
-**Description**: Clears cookies and removes the session from the database.
+**Description**: Invalidates the current session and clears authentication cookies.
 
-**Response** (200):
+**Response**:
 ```json
-{ "success": true, "statuscode": 200, "message": "Logged out successfully" }
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "Logged out successfully"
+}
 ```
 
----
-
-### Book / Public Routes (authenticated)
-
-All endpoints require a valid session cookie.
+### Book Endpoints
 
 #### GET /api/book/all
-**Description**: Fetch all books (optional `?search` parameter by title or category).
+**Description**: Retrieves a list of all active books in the library. Accepts an optional `?search=` query parameter.
+
+**Response**:
+```json
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "all books found",
+  "data": [
+    {
+      "id": "uuid-string",
+      "title": "Book Title",
+      "author": "Author Name",
+      "category": "Thriller",
+      "coverphoto": "url",
+      "pageCount": 350
+    }
+  ]
+}
+```
 
 #### GET /api/book/latest
-**Description**: Fetch latest 10 books.
+**Description**: Retrieves the 10 most recently added books.
+
+**Response**:
+```json
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "books found",
+  "data": []
+}
+```
 
 #### GET /api/book/feature
-**Description**: Fetch featured books.
+**Description**: Retrieves a single featured book from the library.
+
+**Response**:
+```json
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "featured Book",
+  "data": []
+}
+```
 
 #### GET /api/book/point
-**Description**: Fetch current user’s point balance.
+**Description**: Retrieves the authenticated user's current point balance.
 
-#### POST
+**Response**:
+```json
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "User points fetched successfully",
+  "data": {
+    "points": 30000
+  }
+}
+```
+
+#### POST /api/book/deposit
+**Description**: Adds simulated points to the user's balance for testing purposes.
+
+**Request**:
+```json
+{
+  "amount": 1000
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "Points deposited successfully",
+  "data": {
+    "deposited": 1000
+  }
+}
+```
+
+#### GET /api/book/history
+**Description**: Retrieves the authenticated user's reading history.
+
+**Response**:
+```json
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "Read history retrieved successfully",
+  "data": []
+}
+```
+
+#### GET /api/book/read/:bookId
+**Description**: Evaluates if the user has access to a book. Deducts points if it is a new read, or bypasses deduction if previously read.
+
+**Response**:
+```json
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "Book ready to read",
+  "data": {
+    "filePath": "secure-cloudinary-url.pdf"
+  }
+}
+```
+
+**Errors**:
+- 403: Not enough points
+- 404: Book not found
+
+#### GET /api/book/me
+**Description**: Validates the current session and returns basic user data.
+
+**Response**:
+```json
+{
+  "success": true,
+  "statuscode": 200,
+  "message": "User fetched successfully",
+  "data": {
+    "id": "uuid-string",
+    "user_name": "johndoe",
+    "email": "john@example.com",
+    "role": "user"
+  }
+}
+```
+
+#### GET /api/book/download/:bookId
+**Description**: Proxies a secure PDF download from Cloudinary to the client.
+
+### Admin Endpoints
+
+#### POST /api/admin/upload
+**Description**: Processes a multipart form submission containing a new book's metadata, cover image, and PDF file.
+
+#### PUT /api/admin/editbook/:id
+**Description**: Updates the text metadata of an existing book.
+
+#### PUT /api/admin/updatebookfile/:id
+**Description**: Replaces the PDF file of an existing book.
+
+#### PUT /api/admin/updatebookcover/:id
+**Description**: Replaces the cover image of an existing book.
+
+#### DELETE /api/admin/delete/:id
+**Description**: Removes a book and its associated media files from storage completely.
+
+### Profile Endpoints
+
+#### PUT /api/profile/change
+**Description**: Updates the authenticated user's password.
+
+**Request**:
+```json
+{
+  "oldpassword": "currentpassword",
+  "password": "newpassword123"
+}
+```
+
+#### GET /api/profile/amount
+**Description**: Retrieves the raw point transactions history for the authenticated user.
+
+## Contributing
+
+Contributions are always welcome. Feel free to open issues or submit pull requests for new features, bug fixes, or documentation improvements. Please ensure your code follows the existing style and passes all linting rules before opening a pull request.
+
+## Author Info
+
+*   GitHub: [skido600](https://github.com/skido600)
+
+## Badges
+
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
+
+[![Readme was generated by Dokugen](https://img.shields.io/badge/Readme%20was%20generated%20by-Dokugen-brightgreen)](https://dokugen.samueltuoyo.com)
