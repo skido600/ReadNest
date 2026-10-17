@@ -61,9 +61,8 @@ export function useOtpVerification(email: string) {
         body: JSON.stringify({ email, code }),
       });
 
-      // console.log("email check", email);
       const result = await res.json();
-      // console.log(result);
+
       if (result.success) {
         toast.success(result.message, { duration: 10000 });
         setShowOtpModal(false);

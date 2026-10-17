@@ -46,7 +46,7 @@ export async function getnewbooks() {
   }
 
   const data = await response.json();
-  console.log("data from latest book", data);
+
   let result = data.data;
   return result;
 }
@@ -59,8 +59,6 @@ export const readBookService = async (bookId: string) => {
     credentials: "include",
   });
   const data = await response.json();
-
-  console.log("API RESPONSE:", data);
 
   if (!response.ok) {
     throw data;
@@ -294,10 +292,7 @@ export async function downloadBookService(bookId: string) {
   }
 
   const blob = await response.blob();
-  console.log(
-    "CONTENT DISPOSITION:",
-    response.headers.get("content-disposition"),
-  );
+
   return {
     blob,
     filename: getFilenameFromDisposition(
