@@ -15,22 +15,7 @@ function Usersidebar() {
   const router = useRouter();
   const { user } = useUser();
   const pathname = usePathname();
-  // Lock page scrolling when sidebar is open
-  // useEffect(() => {
-  //   document.body.style.overflow = isOpen ? "hidden" : "";
 
-  //   return () => {
-  //     document.body.style.overflow = "";
-  //   };
-  // }, [isOpen]);
-  // useEffect(() => {
-  //   const isBookReader =
-  //     pathname.startsWith("/dashboard/") && pathname.split("/").length === 3;
-
-  //   if (isBookReader) {
-  //     close();
-  //   }
-  // }, [pathname, close]);
   if (!user) return null;
 
   const userMenu = [
@@ -83,7 +68,7 @@ function Usersidebar() {
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm min-[1100px]:hidden"
           onClick={close}
           aria-hidden="true"
         />
@@ -91,16 +76,16 @@ function Usersidebar() {
 
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50
-          flex  w-64 flex-col
-          border-r border-neutral-200 dark:border-neutral-800
-          bg-white dark:bg-black
-          shadow-xl
-          transform transition-transform duration-300
-          overflow-hidden
-          ${isOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0
-        `}>
+    fixed inset-y-0 left-0 z-50
+    flex w-64 flex-col
+    border-r border-neutral-200 dark:border-neutral-800
+    bg-white dark:bg-black
+    shadow-xl
+    transform transition-transform duration-300
+    overflow-hidden
+    ${isOpen ? "translate-x-0" : "-translate-x-full"}
+    min-[1100px]:translate-x-0
+  `}>
         {/* Logo */}
         <div className="flex h-16 items-center justify-center border-b border-neutral-200 dark:border-neutral-800">
           <h1 className="text-4xl font-Tagesschrift text-black dark:text-white">

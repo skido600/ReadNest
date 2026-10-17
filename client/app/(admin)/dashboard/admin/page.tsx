@@ -35,7 +35,7 @@ export default function AdminboardPage() {
     queryKey: ["all-books", search],
     queryFn: () => getAllBooks(search),
   });
-  console.log("all book from admin side", books);
+ 
   const deleteMutation = useMutation({
     mutationFn: deleteBookService,
 

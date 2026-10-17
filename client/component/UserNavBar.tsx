@@ -31,7 +31,7 @@ function UserNavBar() {
           <ThemeToggle />
           <button
             onClick={toggle}
-            className="md:hidden p-2 rounded-lg bg-neutral-900">
+            className="min-[1100px]:hidden p-2 rounded-lg bg-neutral-900">
             {isOpen ? (
               <X size={20} className="text-white" />
             ) : (

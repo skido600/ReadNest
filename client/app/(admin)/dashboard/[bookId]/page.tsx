@@ -35,9 +35,6 @@ export default function ReaderPage() {
     }
   }, [data, queryClient]);
 
-  console.log("BOOK DATA:", data);
-  console.log("FILE PATH:", data?.filePath);
-
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-900 text-white">

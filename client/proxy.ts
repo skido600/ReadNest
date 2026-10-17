@@ -10,7 +10,7 @@ const protectedPaths = [
 ];
 
 export function proxy(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
+  const { pathname } = request.nextUrl;
 
   // refreshToken lives 7 days, accessToken only 15 min
   const isLoggedIn =
@@ -22,9 +22,7 @@ export function proxy(request: NextRequest) {
   );
 
   if (isProtected && !isLoggedIn) {
-    const url = new URL("/login", request.url);
-    url.searchParams.set("callbackUrl", pathname + search);
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();

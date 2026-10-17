@@ -26,11 +26,9 @@ export default function DashboardClientLayout({
         });
         const data = await res.json();
         if (!res.ok || !data.success) {
-          console.log("Not authenticated:", data);
           router.push("/");
           return;
         }
-        console.log("User authenticated:", data);
       } catch (error) {
         console.error("Auth check failed:", error);
         router.push("/");
@@ -49,19 +47,18 @@ export default function DashboardClientLayout({
       <UserProvider>
         <SidebarProvider>
           <div className="min-h-screen w-full flex">
-            {/* Sidebar */}
-            <aside className="md:w-64">
-              {" "}
+            {/* Sidebar spacer: reserves 256px only from 1100px up */}
+            <aside className="min-[1100px]:w-64 min-[1100px]:shrink-0">
               <Usersidebar />
             </aside>
 
             {/* Right side: Navbar + Main content */}
-            <div className="flex-1 flex flex-col">
-              <div className="fixed top-0 left-0 md:left-64 right-0 z-50">
+            <div className="flex-1 min-w-0 flex flex-col">
+              <div className="fixed top-0 left-0 min-[1100px]:left-64 right-0 z-30">
                 <UserNavBar />
               </div>
-              {/* Main content */}
-              <main className="flex-1 py-2  pt-24  px-4">{children}</main>
+
+              <main className="flex-1 py-2 pt-24 px-4">{children}</main>
             </div>
           </div>
         </SidebarProvider>
