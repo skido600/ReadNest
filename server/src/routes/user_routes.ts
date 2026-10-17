@@ -19,18 +19,45 @@ import {
   Verifycode,
   ResetPassword,
 } from "../utils/validation.ts";
-import { loginRateLimiter } from "../middleware/rateLimit.ts";
+import {
+  signupRateLimiter,
+  otpRateLimiter,
+  loginRateLimiter,
+  forgotPasswordRateLimiter,
+} from "../middleware/rateLimit.ts";
+import { authMiddleware } from "../middleware/verifyToken.ts";
 
 const authroute: Router = express.Router();
-authroute.post("/signup", validateRequest(CreateUserSchema), Signup);
-authroute.post("/verifyemail", validateRequest(Otp), VerifyEmail);
-authroute.post("/login", validateRequest(login), Login);
 authroute.post(
-  "/forget-password",
-  validateRequest(Firstemailvalidate),
-  forgotPassword
+  "/signup",
+  signupRateLimiter,
+  validateRequest(CreateUserSchema),
+  Signup,
 );
-authroute.post("/verifycode", validateRequest(Verifycode), verifyCode);
-authroute.put("/resetpassword", validateRequest(ResetPassword), resetPassword);
-authroute.get("/logout", Logout);
+authroute.post(
+  "/verify-email",
+  otpRateLimiter,
+  validateRequest(Otp),
+  VerifyEmail,
+);
+authroute.post("/login", loginRateLimiter, validateRequest(login), Login);
+authroute.post(
+  "/forgot-password",
+  forgotPasswordRateLimiter,
+  validateRequest(Firstemailvalidate),
+  forgotPassword,
+);
+authroute.post(
+  "/verify-code",
+  otpRateLimiter,
+  validateRequest(Verifycode),
+  verifyCode,
+);
+authroute.put(
+  "/reset-password",
+  otpRateLimiter,
+  validateRequest(ResetPassword),
+  resetPassword,
+);
+authroute.get("/logout", authMiddleware, Logout);
 export default authroute;

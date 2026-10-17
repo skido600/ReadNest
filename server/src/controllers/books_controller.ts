@@ -10,15 +10,21 @@ import {
   usersTable,
 } from "../models/schema.ts";
 import { depositSchema } from "../utils/validation.ts";
+import { getCache, setCache, keys, TTL } from "../utils/cache.ts";
 
 const PAGES_PER_POINT = 10;
-//get feature book
+
+//get feature book (cached)
 export async function getFeaturedBooks(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
+    const key = keys.featured();
+    const cached = await getCache<unknown[]>(key);
+    if (cached) return HandleResponse(res, true, 200, "featured Book", cached);
+
     const books = await db
       .select()
       .from(booksTable)
@@ -27,12 +33,14 @@ export async function getFeaturedBooks(
       )
       .orderBy(desc(booksTable.createdAt));
 
+    await setCache(key, books, TTL.FEATURED);
     return HandleResponse(res, true, 200, "featured Book", books);
   } catch (err) {
     next(err);
   }
 }
 
+// user-specific: NOT cached
 export async function getUserPoints(
   req: any,
   res: Response,
@@ -65,7 +73,8 @@ export async function getUserPoints(
     next(error);
   }
 }
-//get histroy
+
+//get history: user-specific, NOT cached
 export async function getReadHistory(
   req: any,
   res: Response,
@@ -112,13 +121,17 @@ export async function getReadHistory(
   }
 }
 
-//  Get latest books (limit to e.g. 10)
+//  Get latest books (limit 10, cached)
 export async function getLatestBooks(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
+    const key = keys.latest();
+    const cached = await getCache<unknown[]>(key);
+    if (cached) return HandleResponse(res, true, 200, "books found", cached);
+
     const books = await db
       .select({
         id: booksTable.id,
@@ -132,13 +145,15 @@ export async function getLatestBooks(
       .where(eq(booksTable.status, "ready"))
       .orderBy(desc(booksTable.createdAt))
       .limit(10);
+
+    await setCache(key, books, TTL.LATEST);
     return HandleResponse(res, true, 200, "books found", books);
   } catch (err) {
     next(err);
   }
 }
 
-//get all books
+//get all books (cached per search term)
 export async function getBooks(
   req: Request,
   res: Response,
@@ -146,15 +161,24 @@ export async function getBooks(
 ) {
   try {
     const search = req.query.search as string | undefined;
+    const key = keys.all(search);
 
+    const cached = await getCache<unknown[]>(key);
+    if (cached)
+      return HandleResponse(res, true, 200, "all books found", cached);
+
+    // FIX: search results now also respect status = "ready"
     const books = await db
       .select()
       .from(booksTable)
       .where(
         search
-          ? or(
-              ilike(booksTable.title, `%${search}%`),
-              ilike(booksTable.category, `%${search}%`),
+          ? and(
+              eq(booksTable.status, "ready"),
+              or(
+                ilike(booksTable.title, `%${search}%`),
+                ilike(booksTable.category, `%${search}%`),
+              ),
             )
           : eq(booksTable.status, "ready"),
       );
@@ -168,13 +192,14 @@ export async function getBooks(
       );
     }
 
+    await setCache(key, books, search ? TTL.SEARCH : TTL.LIST);
     return HandleResponse(res, true, 200, "all books found", books);
   } catch (err) {
     next(err);
   }
 }
 
-//saerchByTitle
+//searchByTitle (cached)
 export async function searchByTitle(
   req: Request,
   res: Response,
@@ -184,8 +209,12 @@ export async function searchByTitle(
     const { q } = req.query;
 
     if (!q || typeof q !== "string") {
-      return HandleResponse(res, true, 200, []);
+      return HandleResponse(res, true, 200, "No query", []);
     }
+
+    const key = keys.search(q);
+    const cached = await getCache<unknown[]>(key);
+    if (cached) return HandleResponse(res, true, 200, "books found", cached);
 
     const books = await db
       .select()
@@ -195,11 +224,14 @@ export async function searchByTitle(
       )
       .limit(20);
 
-    return HandleResponse(res, true, 200, books);
+    await setCache(key, books, TTL.SEARCH);
+    return HandleResponse(res, true, 200, "books found", books);
   } catch (err) {
     next(err);
   }
 }
+
+// user-specific (points + history): NOT cached
 export async function readBook(
   req: any,
   res: Response,
@@ -303,7 +335,7 @@ export async function readBook(
   }
 }
 
-// get single book
+// get single book (cached)
 export async function getSingleBook(
   req: Request,
   res: Response,
@@ -315,6 +347,10 @@ export async function getSingleBook(
     if (!bookId) {
       return HandleResponse(res, false, 400, "Book id is required");
     }
+
+    const key = keys.single(bookId);
+    const cached = await getCache<unknown>(key);
+    if (cached) return HandleResponse(res, true, 200, "see the book", cached);
 
     const books = await db
       .select()
@@ -328,6 +364,7 @@ export async function getSingleBook(
       return HandleResponse(res, false, 404, "Book not found");
     }
 
+    await setCache(key, book, TTL.SINGLE);
     return HandleResponse(res, true, 200, "see the book", book);
   } catch (err) {
     next(err);
@@ -388,7 +425,6 @@ export async function depositPoints(
 export async function getMe(req: any, res: Response, next: NextFunction) {
   try {
     const userId = req.user.id;
-    console.log("from me", userId);
     const [user] = await db
       .select({
         id: usersTable.id,
@@ -408,6 +444,38 @@ export async function getMe(req: any, res: Response, next: NextFunction) {
   } catch (err) {
     next(err);
   }
+}
+
+async function streamPdf(
+  res: Response,
+  book: { title: string | null; filePath: string },
+) {
+  const response = await fetch(book.filePath);
+
+  if (!response.ok || !response.body) {
+    return HandleResponse(res, false, 500, "Failed to fetch book PDF");
+  }
+
+  const filename = `${book.title || "book"}`
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+    .trim();
+
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${filename}.pdf"`,
+  );
+  res.setHeader("Content-Type", "application/pdf");
+
+  const contentLength = response.headers.get("content-length");
+  if (contentLength) res.setHeader("Content-Length", contentLength);
+
+  const reader = response.body.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    res.write(Buffer.from(value));
+  }
+  res.end();
 }
 
 export async function downloadBook(
@@ -442,41 +510,7 @@ export async function downloadBook(
       return HandleResponse(res, false, 404, "Book PDF not found");
     }
 
-    // Fetch PDF from Cloudinary
-    const response = await fetch(book.filePath);
-
-    if (!response.ok || !response.body) {
-      return HandleResponse(res, false, 500, "Failed to fetch book PDF");
-    }
-
-    const filename = `${book.title || "book"}`
-      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
-      .trim();
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${filename}.pdf"`,
-    );
-
-    res.setHeader("Content-Type", "application/pdf");
-    const contentLength = response.headers.get("content-length");
-
-    if (contentLength) {
-      res.setHeader("Content-Length", contentLength);
-    }
-
-    // Convert Web ReadableStream → Node response
-    const reader = response.body.getReader();
-
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) break;
-
-      res.write(Buffer.from(value));
-    }
-
-    res.end();
+    await streamPdf(res, book as any);
   } catch (error) {
     console.error("Download book error:", error);
     next(error);
@@ -514,7 +548,6 @@ export async function downloadBook2(
       );
     }
 
-    // Get book
     const books = await db
       .select({
         id: booksTable.id,
@@ -535,41 +568,7 @@ export async function downloadBook2(
       return HandleResponse(res, false, 404, "Book PDF not found");
     }
 
-    // Fetch PDF from Cloudinary
-    const response = await fetch(book.filePath);
-
-    if (!response.ok || !response.body) {
-      return HandleResponse(res, false, 500, "Failed to fetch book PDF");
-    }
-
-    const filename = `${book.title || "book"}`
-      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
-      .trim();
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${filename}.pdf"`,
-    );
-
-    res.setHeader("Content-Type", "application/pdf");
-
-    const contentLength = response.headers.get("content-length");
-
-    if (contentLength) {
-      res.setHeader("Content-Length", contentLength);
-    }
-
-    const reader = response.body.getReader();
-
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) break;
-
-      res.write(Buffer.from(value));
-    }
-
-    res.end();
+    await streamPdf(res, book as any);
   } catch (error) {
     console.error("Download book error:", error);
     next(error);

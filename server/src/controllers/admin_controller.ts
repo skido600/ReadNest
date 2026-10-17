@@ -14,10 +14,10 @@ import { PDFDocument } from "pdf-lib";
 import { uploadTocloudinary } from "../utils/uploadTocloudinary.ts";
 import { eq } from "drizzle-orm";
 import { generateLandingCache } from "../utils/generateLandingCache.ts";
+import { invalidateBooksCache } from "../utils/cache.ts";
 
 import { bookQueue } from "../utils/queues/bookQueue.ts";
 
-bookQueue;
 export async function uploadBook(
   req: any,
   res: Response,
@@ -89,6 +89,9 @@ export async function uploadBook(
       },
     );
 
+    // No invalidation here: the book is "processing" so it isn't public yet.
+    // Invalidate in the worker when status flips to "ready" (see note).
+
     return HandleResponse(
       res,
       true,
@@ -149,6 +152,7 @@ export async function updateBook(req: any, res: Response, next: NextFunction) {
     await db.update(booksTable).set(updateData).where(eq(booksTable.id, id));
 
     await generateLandingCache();
+    await invalidateBooksCache();
 
     return HandleResponse(res, true, 200, "Book updated successfully");
   } catch (err) {
@@ -183,6 +187,7 @@ export async function deleteBook(
     await db.delete(booksTable).where(eq(booksTable.id, id));
 
     await generateLandingCache();
+    await invalidateBooksCache();
 
     return HandleResponse(res, true, 200, "Book deleted successfully");
   } catch (err) {
@@ -231,6 +236,7 @@ export async function updateBookFile(
 
     fs.unlinkSync(bookFile.path);
     await generateLandingCache();
+    await invalidateBooksCache();
 
     return HandleResponse(res, true, 200, "PDF updated successfully");
   } catch (err) {
@@ -276,6 +282,7 @@ export async function updateBookCover(
 
     fs.unlinkSync(coverFile.path);
     await generateLandingCache();
+    await invalidateBooksCache();
 
     return HandleResponse(res, true, 200, "Cover updated successfully");
   } catch (err) {
