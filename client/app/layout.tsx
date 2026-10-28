@@ -5,7 +5,7 @@ import ConditionalNav from "@/component/ClientComponents/Conditionalshow";
 import ConditionalFooter from "@/component/ClientComponents/ConditionalshowFooter";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "next-themes";
-import { TanstackQueryProvider } from "./context/TanstackQueryProvider";
+import { TanstackQueryProvider } from "../context/TanstackQueryProvider";
 
 const siteUrl = "https://read-nest-431c.vercel.app";
 export const metadata: Metadata = {

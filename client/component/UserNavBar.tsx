@@ -1,12 +1,12 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useSidebar } from "@/app/context/Sidebar";
+import { useSidebar } from "@/context/Sidebar";
 
 import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ClientComponents/ThemeToggle";
 import PointBalance from "./ClientComponents/PointBalance";
-import { useUser } from "@/app/context/UserContext";
+import { useUser } from "@/context/UserContext";
 
 function UserNavBar() {
   const { isOpen, toggle } = useSidebar();

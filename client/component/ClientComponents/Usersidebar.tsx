@@ -6,8 +6,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { FiHome, FiCompass, FiHeart, FiLogOut } from "react-icons/fi";
 import { BanknoteArrowUp, Shield } from "lucide-react";
 
-import { useSidebar } from "@/app/context/Sidebar";
-import { useUser } from "@/app/context/UserContext";
+import { useSidebar } from "@/context/Sidebar";
+import { useUser } from "@/context/UserContext";
 import { logout } from "@/fetchs/services";
 
 function Usersidebar() {

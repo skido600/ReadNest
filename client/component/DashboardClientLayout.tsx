@@ -1,7 +1,7 @@
 "use client";
-import { SidebarProvider } from "@/app/context/Sidebar";
-import { TanstackQueryProvider } from "@/app/context/TanstackQueryProvider";
-import { UserProvider } from "@/app/context/UserContext";
+import { SidebarProvider } from "@/context/Sidebar";
+import { TanstackQueryProvider } from "@/context/TanstackQueryProvider";
+import { UserProvider } from "@/context/UserContext";
 import Usersidebar from "@/component/ClientComponents/Usersidebar";
 import UserNavBar from "@/component/UserNavBar";
 
@@ -47,7 +47,6 @@ export default function DashboardClientLayout({
       <UserProvider>
         <SidebarProvider>
           <div className="min-h-screen w-full flex">
-            {/* Sidebar spacer: reserves 256px only from 1100px up */}
             <aside className="min-[1100px]:w-64 min-[1100px]:shrink-0">
               <Usersidebar />
             </aside>

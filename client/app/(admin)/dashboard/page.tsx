@@ -2,7 +2,7 @@
 
 import AdminUploadBook from "@/component/AdminUploadBook";
 import MainDashbaord from "@/component/Main_dashbaord";
-import { useUser } from "@/app/context/UserContext";
+import { useUser } from "@/context/UserContext";
 
 export default function DashboardPage() {
   const { user } = useUser();
