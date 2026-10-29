@@ -14,8 +14,6 @@ export function useOtpVerification(email: string) {
   const [verifying, setVerifying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(OTP_DURATION);
 
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
   /*TIMER  */
   useEffect(() => {
     if (!showOtpModal) return;
@@ -55,7 +53,7 @@ export function useOtpVerification(email: string) {
     setVerifying(true);
 
     try {
-      const res = await fetch(`${backendUrl}/api/authv1/verifyemail`, {
+      const res = await fetch(`/api/authv1/verifyemail`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code }),

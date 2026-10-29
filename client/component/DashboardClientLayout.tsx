@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MainLoader from "@/helper/MainLoder";
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL!;
 export default function DashboardClientLayout({
   children,
 }: {
@@ -20,7 +19,7 @@ export default function DashboardClientLayout({
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch(`${backendUrl}/api/book/me`, {
+        const res = await fetch(`/api/book/me`, {
           method: "GET",
           credentials: "include",
         });

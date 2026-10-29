@@ -28,10 +28,10 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 //routes
-app.use("/api/authv1", authroute);
-app.use("/api/admin", adminrouter);
-app.use("/api/book", bookroute);
-app.use("/api/profile", profile);
+app.use("/authv1", authroute);
+app.use("/admin", adminrouter);
+app.use("/book", bookroute);
+app.use("/profile", profile);
 //error handling
 
 // status

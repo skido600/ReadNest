@@ -1,5 +1,3 @@
-const backendUrl = "/api";
-
 import toast from "react-hot-toast";
 
 function getFilenameFromDisposition(disposition: string | null) {
@@ -11,7 +9,7 @@ function getFilenameFromDisposition(disposition: string | null) {
 }
 export async function logout(router: any) {
   try {
-    const data = await fetch(`${backendUrl}/api/authv1/logout`, {
+    const data = await fetch(`/api/authv1/logout`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -33,7 +31,7 @@ export async function logout(router: any) {
 }
 
 export async function getnewbooks() {
-  const response = await fetch(`${backendUrl}/api/book/latest`, {
+  const response = await fetch(`/api/book/latest`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -51,7 +49,7 @@ export async function getnewbooks() {
   return result;
 }
 export const readBookService = async (bookId: string) => {
-  const response = await fetch(`${backendUrl}/api/book/read/${bookId}`, {
+  const response = await fetch(`/api/book/read/${bookId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -69,7 +67,7 @@ export const readBookService = async (bookId: string) => {
 
 export const bookHistory = async (search?: string) => {
   const response = await fetch(
-    `${backendUrl}/api/book/history${search ? `?search=${search}` : ""}`,
+    `/api/book/history${search ? `?search=${search}` : ""}`,
     {
       method: "GET",
       headers: {
@@ -89,7 +87,7 @@ export const bookHistory = async (search?: string) => {
 };
 export const getAllBooks = async (search?: string) => {
   const response = await fetch(
-    `${backendUrl}/api/book/all${search ? `?search=${search}` : ""}`,
+    `/api/book/all${search ? `?search=${search}` : ""}`,
     {
       method: "GET",
       headers: {
@@ -108,7 +106,7 @@ export const getAllBooks = async (search?: string) => {
   return data.data;
 };
 export const getFeaturedBook = async () => {
-  const response = await fetch(`${backendUrl}/api/book/feature`, {
+  const response = await fetch(`/api/book/feature`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -125,7 +123,7 @@ export const getFeaturedBook = async () => {
   return data.data;
 };
 export const depositService = async (amount: number) => {
-  const response = await fetch(`${backendUrl}/api/book/deposit`, {
+  const response = await fetch(`/api/book/deposit`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -146,7 +144,7 @@ export const depositService = async (amount: number) => {
 };
 
 export const getUserPoints = async () => {
-  const response = await fetch(`${backendUrl}/api/book/point`, {
+  const response = await fetch(`/api/book/point`, {
     method: "GET",
     credentials: "include",
     headers: {
@@ -163,7 +161,7 @@ export const getUserPoints = async () => {
   return data.data;
 };
 export const uploadBookService = async (formData: FormData) => {
-  const response = await fetch(`${backendUrl}/api/admin/upload`, {
+  const response = await fetch(`/api/admin/upload`, {
     method: "POST",
     credentials: "include",
     body: formData,
@@ -178,7 +176,7 @@ export const uploadBookService = async (formData: FormData) => {
   return data;
 };
 export const deleteBookService = async (id: string) => {
-  const response = await fetch(`${backendUrl}/api/admin/delete/${id}`, {
+  const response = await fetch(`/api/admin/delete/${id}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -199,7 +197,7 @@ export const editBookService = async (
     isFeatured: boolean;
   },
 ) => {
-  const response = await fetch(`${backendUrl}/api/admin/editbook/${id}`, {
+  const response = await fetch(`/api/admin/editbook/${id}`, {
     method: "PUT",
     credentials: "include",
     headers: {
@@ -219,7 +217,7 @@ export const updateBookFileService = async (id: string, file: File) => {
   const formData = new FormData();
   formData.append("book", file);
 
-  const response = await fetch(`${backendUrl}/api/admin/updatebookfile/${id}`, {
+  const response = await fetch(`/api/admin/updatebookfile/${id}`, {
     method: "PUT",
     credentials: "include",
     body: formData,
@@ -236,14 +234,11 @@ export const updateBookCoverService = async (id: string, file: File) => {
   const formData = new FormData();
   formData.append("cover", file);
 
-  const response = await fetch(
-    `${backendUrl}/api/admin/updatebookcover/${id}`,
-    {
-      method: "PUT",
-      credentials: "include",
-      body: formData,
-    },
-  );
+  const response = await fetch(`/api/admin/updatebookcover/${id}`, {
+    method: "PUT",
+    credentials: "include",
+    body: formData,
+  });
 
   const data = await response.json();
 
@@ -252,7 +247,7 @@ export const updateBookCoverService = async (id: string, file: File) => {
   return data;
 };
 export const getFeaturedBooks = async () => {
-  const response = await fetch(`${backendUrl}/api/book/featured`, {
+  const response = await fetch(`/api/book/featured`, {
     method: "GET",
     credentials: "include",
     headers: {
@@ -270,7 +265,7 @@ export const getFeaturedBooks = async () => {
 };
 
 export async function checkServer() {
-  const response = await fetch(`${backendUrl}/health`, { method: "GET" });
+  const response = await fetch(`/health`, { method: "GET" });
 
   if (!response.ok) {
     throw new Error("Server is offline");
@@ -280,7 +275,7 @@ export async function checkServer() {
 }
 
 export async function downloadBookService(bookId: string) {
-  const response = await fetch(`${backendUrl}/api/book/download/${bookId}`, {
+  const response = await fetch(`/api/book/download/${bookId}`, {
     method: "GET",
     credentials: "include",
   });

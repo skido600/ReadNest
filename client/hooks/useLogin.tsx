@@ -5,9 +5,8 @@ import { Inputs } from "@/types/types";
 import { useOtpVerification } from "./useOtpVerification";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-//login and forgetpassword logic is here
+
 export function useLogin() {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const { reset } = useForm<Inputs>();
   const [messages, setMessage] = useState<any>();
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -35,7 +34,7 @@ export function useLogin() {
     setLoading((p) => ({ ...p, login: true }));
     setLoginEmail(data.email_username);
     try {
-      const res = await fetch(`${backendUrl}/api/authv1/login`, {
+      const res = await fetch(`/api/authv1/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -89,7 +88,7 @@ export function useLogin() {
     setLoading((p) => ({ ...p, forgotStep1: true }));
 
     try {
-      const res = await fetch(`${backendUrl}/api/authv1/forget-password`, {
+      const res = await fetch(`/api/authv1/forget-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: data.email_username }),
@@ -112,7 +111,7 @@ export function useLogin() {
     setLoading((p) => ({ ...p, forgotStep2: true }));
 
     try {
-      const res = await fetch(`${backendUrl}/api/authv1/verifycode`, {
+      const res = await fetch(`/api/authv1/verifycode`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: details.email, code: data.otp }),
@@ -139,7 +138,7 @@ export function useLogin() {
     setLoading((p) => ({ ...p, forgotStep3: true }));
 
     try {
-      const res = await fetch(`${backendUrl}/api/authv1/resetpassword`, {
+      const res = await fetch(`/api/authv1/resetpassword`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
